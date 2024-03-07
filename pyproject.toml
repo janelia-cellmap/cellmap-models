@@ -36,3 +36,6 @@ dev = [
 [project.urls]
 homepage = "https://github.com/janelia-cellmap/cellmap-models"
 repository = "https://github.com/janelia-cellmap/cellmap-models"
+
+[tool.mypy]
+exclude = ['setup*']
