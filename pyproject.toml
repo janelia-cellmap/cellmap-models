@@ -3,7 +3,7 @@ build-backend = "setuptools.build_meta"
 requires = ["setuptools", "wheel"]
 
 [project]
-name = "cellmap_models"
+name = "cellmap-models"
 description = "Repository of model architectures and network weights used for CellMap segmentations."
 readme = "README.md"
 requires-python = ">=3.7"
