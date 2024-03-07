@@ -39,3 +39,4 @@ repository = "https://github.com/janelia-cellmap/cellmap-models"
 
 [tool.mypy]
 exclude = ['setup*']
+ignore_missing_imports = true
