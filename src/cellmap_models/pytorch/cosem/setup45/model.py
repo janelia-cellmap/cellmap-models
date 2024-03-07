@@ -36,4 +36,3 @@ for name, url in urls.items():
     if not (Path(__file__).parent / f"{name}").exists():
         print(f"Downloading {name} from {url}")
         download_url_to_file(url, str(Path(__file__).parent / f"{name}.pth"))
-

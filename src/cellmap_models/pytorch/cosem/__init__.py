@@ -1,4 +1,5 @@
 from .load_model import load_model
+
 models_list = [
     "setup04/1820500.pth",
     "setup04/625000.pth",
