@@ -32,6 +32,9 @@ dev = [
   'pdoc',
   'pre-commit'
 ]
+pretrained = [
+  'cellpose[gui]'
+]
 
 [project.urls]
 homepage = "https://github.com/janelia-cellmap/cellmap-models"
@@ -40,3 +43,6 @@ repository = "https://github.com/janelia-cellmap/cellmap-models"
 [tool.mypy]
 exclude = ['setup*']
 ignore_missing_imports = true
+
+[project.scripts]
+cellmap.add_cellpose = "cellmap_models.cellpose:add_model"

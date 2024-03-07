@@ -7,7 +7,8 @@ from tqdm import tqdm
 
 
 def download_url_to_file(url, dst, progress=True):
-    r"""Download object at the given URL to a local path.
+    # Originally from CellPose
+    """Download object at the given URL to a local path.
             Thanks to torch, slightly modified
     Args:
         url (string): URL of the object to download

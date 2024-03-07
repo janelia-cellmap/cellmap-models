@@ -30,6 +30,12 @@ def get_param_dict(model_params):
 
 
 def load_model(checkpoint_path):
+    """
+    Load a model from a checkpoint file.
+
+    Args:
+        checkpoint_path (str): Path to the checkpoint file.
+    """
     if not Path(checkpoint_path).exists():
         checkpoint_path = Path(Path(__file__).parent / checkpoint_path)
     model_params = SourceFileLoader(
