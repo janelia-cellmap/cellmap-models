@@ -4,26 +4,24 @@ This repository contains the COSEM trained networks, converted to PyTorch. The o
 
 The networks have been converted to PyTorch from their original Tensorflow versions using the scripts available [here](https://github.com/pattonw/cnnectome.conversion). All models are trained on 3D data and expect input of shape `(batch_size, 1, z, y, x)`.
 
-This repo is pip installable, simply follow the steps below in an appropriate python environment (python >= 3.7), replacing `/path/to/cosem_models` with the path to this repository on your local machine:
-
-```bash
-cd /path/to/cosem_models
-pip install .
-```
-
-Then you can load a model using the following code:
+You can load a model using the following code:
 
 ```python
-import cosem_models
+import cellmap_models.cosem as cosem_models
 model = cosem_models.load_model('setup04/1820500')
-
 # The model is now ready to use
+```
+
+Available models can be seen with the following code:
+
+```python
+cosem_models.models_list
 ```
 
 Each model has a separate unet backbone and single layer prediction head. The `unet` and `head` objects are both PyTorch modules and can be used as such. You can access the separate components of the model using the following code:
 
 ```python
-import cosem_models
+import cellmap_models.cosem as cosem_models
 model = cosem_models.load_model('setup04/1820500')
 unet = model.unet
 head = model.prediction_head

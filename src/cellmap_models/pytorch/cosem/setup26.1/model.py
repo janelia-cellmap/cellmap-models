@@ -1,6 +1,6 @@
 from pathlib import Path
 import numpy as np
-from cellmap-models import download_url_to_file
+from cellmap_models import download_url_to_file
 
 # voxel size parameters
 voxel_size_output = np.array((4,) * 3)
@@ -33,4 +33,6 @@ urls = {
     "650000": "https://janelia-cosem-networks.s3.amazonaws.com/v0003.2-pytorch/cosem_models/cosem_models/setup26.1/650000",
 }
 for name, url in urls.items():
-    download_url_to_file(url, str(Path(__file__).parent / f"{name}"))
+    if not (Path(__file__).parent / f"{name}").exists():
+        print(f"Downloading {name} from {url}")
+        download_url_to_file(url, str(Path(__file__).parent / f"{name}.pth"))

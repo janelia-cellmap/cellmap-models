@@ -20,13 +20,17 @@ pip install .
 ## Usage
 
 ```python
-import cellmap-models
+import cellmap_models
 ```
 
 Different models are available in the `cellmap-models` module. For example, to use the models produced by the `COSEM` pilot project team, and published as part of [Whole-cell organelle segmentation in volume electron microscopy](https://doi.org/10.1038/s41586-021-03977-3):
 
 ```python
-import cellmap-models.cosem as cosem_models
+import cellmap_models.cosem as cosem_models
+print(cosem_models.models_list)
+```
+This will list the available models. To load a specific model, use the `load_model` function:
+```python
 model = cosem_models.load_model('setup04/1820500')
 ```
 
