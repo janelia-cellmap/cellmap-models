@@ -3,7 +3,7 @@ build-backend = "setuptools.build_meta"
 requires = ["setuptools", "wheel"]
 
 [project]
-name = "cellmap.models"
+name = "cellmap-models"
 description = "Repository of model architectures and network weights used for CellMap segmentations."
 readme = "README.md"
 requires-python = ">=3.7"
@@ -33,5 +33,5 @@ dev = [
 ]
 
 [project.urls]
-homepage = "https://github.com/janelia-cellmap/cellmap.models"
-repository = "https://github.com/janelia-cellmap/cellmap.models"
+homepage = "https://github.com/janelia-cellmap/cellmap-models"
+repository = "https://github.com/janelia-cellmap/cellmap-models"

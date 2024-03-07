@@ -1,8 +1,0 @@
-README.md
-pyproject.toml
-src/cellmap.models.egg-info/PKG-INFO
-src/cellmap.models.egg-info/SOURCES.txt
-src/cellmap.models.egg-info/dependency_links.txt
-src/cellmap.models.egg-info/requires.txt
-src/cellmap.models.egg-info/top_level.txt
-tests/test_assert.py

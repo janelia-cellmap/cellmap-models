@@ -7,8 +7,8 @@
       "full_name": "CellMap",
       "email": "rhoadesj@hhmi.org",
       "github_username": "rhoadesScholar",
-      "project_name": "cellmap.models",
-      "project_slug": "cellmap.models",
+      "project_name": "cellmap-models",
+      "project_slug": "cellmap-models",
       "project_short_description": "Repository of model architectures and network weights used for CellMap segmentations.",
       "_copy_without_render": [
         ".github/workflows/tests.yaml",

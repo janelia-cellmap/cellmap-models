@@ -1,17 +1,17 @@
-# cellmap.models
+# cellmap-models
 
-[![tests](https://github.com/janelia-cellmap/cellmap.models/actions/workflows/tests.yaml/badge.svg)](https://github.com/janelia-cellmap/cellmap.models/actions/workflows/tests.yaml)
-[![black](https://github.com/janelia-cellmap/cellmap.models/actions/workflows/black.yaml/badge.svg)](https://github.com/janelia-cellmap/cellmap.models/actions/workflows/black.yaml)
-[![mypy](https://github.com/janelia-cellmap/cellmap.models/actions/workflows/mypy.yaml/badge.svg)](https://github.com/janelia-cellmap/cellmap.models/actions/workflows/mypy.yaml)
-[![codecov](https://codecov.io/gh/janelia-cellmap/cellmap.models/branch/main/graph/badge.svg)](https://codecov.io/gh/janelia-cellmap/cellmap.models)
+[![tests](https://github.com/janelia-cellmap/cellmap-models/actions/workflows/tests.yaml/badge.svg)](https://github.com/janelia-cellmap/cellmap-models/actions/workflows/tests.yaml)
+[![black](https://github.com/janelia-cellmap/cellmap-models/actions/workflows/black.yaml/badge.svg)](https://github.com/janelia-cellmap/cellmap-models/actions/workflows/black.yaml)
+[![mypy](https://github.com/janelia-cellmap/cellmap-models/actions/workflows/mypy.yaml/badge.svg)](https://github.com/janelia-cellmap/cellmap-models/actions/workflows/mypy.yaml)
+[![codecov](https://codecov.io/gh/janelia-cellmap/cellmap-models/branch/main/graph/badge.svg)](https://codecov.io/gh/janelia-cellmap/cellmap-models)
 
 This package contains the models used for segmention by the CellMap project team at HHMI Janelia.
 
 ## Installation
 
 ```bash
-git clone https://github.com/janelia-cellmap/cellmap.models
-cd cellmap.models
+git clone https://github.com/janelia-cellmap/cellmap-models
+cd cellmap-models
 conda env create -n cellmap python=3.10
 conda activate cellmap
 pip install .
@@ -20,13 +20,13 @@ pip install .
 ## Usage
 
 ```python
-import cellmap.models
+import cellmap-models
 ```
 
-Different models are available in the `cellmap.models` module. For example, to use the models produced by the `COSEM` pilot project team, and published as part of [Whole-cell organelle segmentation in volume electron microscopy](https://doi.org/10.1038/s41586-021-03977-3):
+Different models are available in the `cellmap-models` module. For example, to use the models produced by the `COSEM` pilot project team, and published as part of [Whole-cell organelle segmentation in volume electron microscopy](https://doi.org/10.1038/s41586-021-03977-3):
 
 ```python
-import cellmap.models.cosem as cosem_models
+import cellmap-models.cosem as cosem_models
 model = cosem_models.load_model('setup04/1820500')
 ```
 
