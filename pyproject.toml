@@ -29,5 +29,5 @@ dev = [
 ]
 
 [project.urls]
-homepage = "https://github.com/rhoadesScholar/cellmap.models"
-repository = "https://github.com/rhoadesScholar/cellmap.models"
+homepage = "https://github.com/janelia-cellmap/cellmap.models"
+repository = "https://github.com/janelia-cellmap/cellmap.models"
