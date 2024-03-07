@@ -14,4 +14,4 @@ jobs:
       - name: Lint with Black
         run: |
           pip install black
-          black --diff --check src/cellmap.models tests
+          black --diff --check src/cellmap-models tests

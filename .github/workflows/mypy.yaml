@@ -15,4 +15,4 @@ jobs:
         run: |
           pip install .
           pip install --upgrade mypy
-          mypy src/cellmap.models
+          mypy src/cellmap-models

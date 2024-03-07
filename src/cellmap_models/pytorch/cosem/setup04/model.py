@@ -1,10 +1,10 @@
-import numpy as np
 from pathlib import Path
-from cellmap.models import download_url_to_file
+import numpy as np
+from cellmap-models import download_url_to_file
 
 # voxel size parameters
 voxel_size_output = np.array((4,) * 3)
-voxel_size_input = np.array((4,) * 3)
+voxel_size_input = np.array((8,) * 3)
 
 # network parameters
 padding = "valid"
@@ -25,12 +25,13 @@ upsample_factor = tuple(voxel_size_input / voxel_size_output)
 final_kernel_size = [(3,) * 3, (3,) * 3]
 final_feature_width = 12 * 6
 
-classes_out = 2
+classes_out = 14
 
 # download pretrained model checkpoints from s3
 urls = {
-    "1634500": "https://janelia-cosem-networks.s3.amazonaws.com/v0003.2-pytorch/cosem_models/cosem_models/setup45/1634500",
-    "625000": "https://janelia-cosem-networks.s3.amazonaws.com/v0003.2-pytorch/cosem_models/cosem_models/setup45/625000",
+    "1820500": "https://janelia-cosem-networks.s3.amazonaws.com/v0003.2-pytorch/cosem_models/cosem_models/setup04/1820500",
+    "625000": "https://janelia-cosem-networks.s3.amazonaws.com/v0003.2-pytorch/cosem_models/cosem_models/setup04/625000",
+    "975000": "https://janelia-cosem-networks.s3.amazonaws.com/v0003.2-pytorch/cosem_models/cosem_models/setup04/975000",
 }
 for name, url in urls.items():
     download_url_to_file(url, str(Path(__file__).parent / f"{name}"))

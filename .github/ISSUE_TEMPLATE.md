@@ -1,4 +1,4 @@
-* cellmap.models version or commit:
+* cellmap-models version or commit:
 * Python version:
 * Operating System:
 

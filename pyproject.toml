@@ -3,7 +3,7 @@ build-backend = "setuptools.build_meta"
 requires = ["setuptools", "wheel"]
 
 [project]
-name = "cellmap-models"
+name = "cellmap_models"
 description = "Repository of model architectures and network weights used for CellMap segmentations."
 readme = "README.md"
 requires-python = ">=3.7"
@@ -19,7 +19,8 @@ dynamic = ["version"]
 dependencies = [
   'torch',
   'torchvision',
-  'numpy'
+  'numpy',
+  "tqdm",
 ]
 
 [project.optional-dependencies]
