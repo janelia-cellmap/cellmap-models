@@ -1,0 +1,33 @@
+[build-system]
+build-backend = "setuptools.build_meta"
+requires = ["setuptools", "wheel"]
+
+[project]
+name = "cellmap.models"
+description = "Repository of model architectures and network weights used for CellMap segmentations."
+readme = "README.md"
+requires-python = ">=3.7"
+classifiers = [
+  "Programming Language :: Python :: 3",
+]
+keywords = []
+license = { text = "BSD 3-Clause License" }
+authors = [
+    { email = "rhoadesj@hhmi.org", name = "CellMap" },
+]
+dynamic = ["version"]
+dependencies = []
+
+[project.optional-dependencies]
+dev = [
+  'pytest',
+  'pytest-cov',
+  'black',
+  'mypy',
+  'pdoc',
+  'pre-commit'
+]
+
+[project.urls]
+homepage = "https://github.com/rhoadesScholar/cellmap.models"
+repository = "https://github.com/rhoadesScholar/cellmap.models"

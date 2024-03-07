@@ -1,0 +1,18 @@
+name: Python mypy
+
+on: [push, pull_request]
+
+jobs:
+  static-analysis:
+    name: Python mypy
+    runs-on: ubuntu-latest
+    steps:
+      - name: Setup Python
+        uses: actions/setup-python@v5
+      - name: Setup checkout
+        uses: actions/checkout@v4
+      - name: mypy
+        run: |
+          pip install .
+          pip install --upgrade mypy
+          mypy src/cellmap.models

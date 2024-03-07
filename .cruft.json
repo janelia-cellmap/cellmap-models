@@ -1,0 +1,21 @@
+{
+  "template": "https://github.com/janelia-cellmap/pycookie",
+  "commit": "a925c2535fd053c77a7fabe77ebd5d676cc83782",
+  "checkout": null,
+  "context": {
+    "cookiecutter": {
+      "full_name": "CellMap",
+      "email": "rhoadesj@hhmi.org",
+      "github_username": "rhoadesScholar",
+      "project_name": "cellmap.models",
+      "project_slug": "cellmap.models",
+      "project_short_description": "Repository of model architectures and network weights used for CellMap segmentations.",
+      "_copy_without_render": [
+        ".github/workflows/tests.yaml",
+        ".github/workflows/docs.yaml"
+      ],
+      "_template": "https://github.com/janelia-cellmap/pycookie"
+    }
+  },
+  "directory": null
+}
