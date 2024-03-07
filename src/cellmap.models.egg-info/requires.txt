@@ -1,0 +1,11 @@
+torch
+torchvision
+numpy
+
+[dev]
+pytest
+pytest-cov
+black
+mypy
+pdoc
+pre-commit

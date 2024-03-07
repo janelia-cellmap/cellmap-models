@@ -1,3 +1,25 @@
+Metadata-Version: 2.1
+Name: cellmap.models
+Version: 0.0.0
+Summary: Repository of model architectures and network weights used for CellMap segmentations.
+Author-email: CellMap <rhoadesj@hhmi.org>
+License: BSD 3-Clause License
+Project-URL: homepage, https://github.com/janelia-cellmap/cellmap.models
+Project-URL: repository, https://github.com/janelia-cellmap/cellmap.models
+Classifier: Programming Language :: Python :: 3
+Requires-Python: >=3.7
+Description-Content-Type: text/markdown
+Requires-Dist: torch
+Requires-Dist: torchvision
+Requires-Dist: numpy
+Provides-Extra: dev
+Requires-Dist: pytest; extra == "dev"
+Requires-Dist: pytest-cov; extra == "dev"
+Requires-Dist: black; extra == "dev"
+Requires-Dist: mypy; extra == "dev"
+Requires-Dist: pdoc; extra == "dev"
+Requires-Dist: pre-commit; extra == "dev"
+
 # cellmap.models
 
 [![tests](https://github.com/janelia-cellmap/cellmap.models/actions/workflows/tests.yaml/badge.svg)](https://github.com/janelia-cellmap/cellmap.models/actions/workflows/tests.yaml)

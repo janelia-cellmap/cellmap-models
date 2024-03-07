@@ -16,7 +16,11 @@ authors = [
     { email = "rhoadesj@hhmi.org", name = "CellMap" },
 ]
 dynamic = ["version"]
-dependencies = []
+dependencies = [
+  'torch',
+  'torchvision',
+  'numpy'
+]
 
 [project.optional-dependencies]
 dev = [
