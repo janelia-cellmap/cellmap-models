@@ -1,5 +1,5 @@
 <!-- FILEPATH: /Users/rhoadesj/Repos/cellmap-models/src/cellmap_models/pytorch/cellpose/README.md -->
-<h1 style="height: 2em;">Finetuned Cellpose Models <img src="https://www.cellpose.org/static/images/cellpose_transparent.png" alt="cellpose logo"></h1>
+<h1 style="height: 56pt;">Finetuned Cellpose Models<img src="https://www.cellpose.org/static/images/cellpose_transparent.png" alt="cellpose logo"></h1>
 
 This directory contains finetuned scripts for downloading Cellpose models, particularly for use with the `cellpose` package. The models are trained on a variety of cell types from CellMap FIBSEM images, and can be used for segmentation of new data.
 
