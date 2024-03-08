@@ -1,27 +1,20 @@
-from . import models_dict
-from cellpose.io import _add_model
+import sys
+from typing import Optional
+from cellpose.io import add_model as _add_model
 from cellpose.models import MODEL_DIR
-from cellpose.utils import download_url_to_file
+from .get_model import get_model
 
 
-def add_model(model_name: str):
+def add_model(model_name: Optional[str] = None):
     """Add model to cellpose
 
     Args:
         model_name (str): model name
     """
-    # download model to cellpose directory
-    if model_name not in models_dict:
-        raise ValueError(
-            f"Model {model_name} is not available. Available models are {list(models_dict.keys())}."
-        )
+    if model_name is None:
+        model_name = sys.argv[1]
     base_path = MODEL_DIR
-
-    if not (base_path / f"{model_name}.pth").exists():
-        print(f"Downloading {model_name} from {models_dict[model_name]}")
-        download_url_to_file(
-            models_dict[model_name], str(base_path / f"{model_name}.pth")
-        )
+    get_model(model_name, base_path)
     _add_model(str(base_path / f"{model_name}.pth"))
     print(
         f"Added model {model_name}. This will now be available in the cellpose model list."

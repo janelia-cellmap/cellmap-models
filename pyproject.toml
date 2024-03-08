@@ -45,4 +45,4 @@ exclude = ['setup*']
 ignore_missing_imports = true
 
 [project.scripts]
-cellmap.add_cellpose = "cellmap_models.cellpose:add_model"
+"cellmap.add_cellpose" = "cellmap_models.pytorch.cellpose:add_model"

@@ -1,7 +1,6 @@
 from pathlib import Path
-from . import models_dict
-from cellmap_models.utils import download_url_to_file
 import torch
+from .get_model import get_model
 
 
 def load_model(
@@ -19,15 +18,8 @@ def load_model(
     Returns:
         model: model
     """
-    if model_name not in models_dict:
-        raise ValueError(
-            f"Model {model_name} is not available. Available models are {list(models_dict.keys())}."
-        )
-    if not (base_path / f"{model_name}.pth").exists():
-        print(f"Downloading {model_name} from {models_dict[model_name]}")
-        download_url_to_file(
-            models_dict[model_name], str(base_path / f"{model_name}.pth")
-        )
+
+    get_model(model_name, base_path)
     if device == "cuda" and not torch.cuda.is_available():
         device = "cpu"
         print("CUDA not available. Using CPU.")
