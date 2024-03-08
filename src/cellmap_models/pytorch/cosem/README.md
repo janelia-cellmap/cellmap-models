@@ -1,3 +1,5 @@
+<img src="../../../../assets/COSEM_logo_semi-invert_transparent.png" alt="CellMap logo" width="85%">
+
 # COSEM Trained PyTorch Networks
 
 This repository contains the COSEM trained networks, converted to PyTorch. The original COSEM repository can be found [here](https://open.quiltdata.com/b/janelia-cosem-networks/tree/v0003.2/) and the original COSEM paper can be found [here](https://doi.org/10.1038/s41586-021-03977-3).

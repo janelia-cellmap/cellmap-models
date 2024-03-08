@@ -5,7 +5,17 @@ This directory contains finetuned scripts for downloading Cellpose models, parti
 
 ## Models
 
-...
+### Trained on p7 mouse tissues
+- __CP_jrc_mus-thymus-1-nuc-2__: trained on thymus nuclei
+- __CP_jrc_mus-skin-1-nuc__:
+- __CP_jrc_mus-pancreas-4_nuc__:
+- __CP_jrc_mus-heart-1-nuc-2__:
+- __CP_jrc_mus-heart-1-ecs__:
+- __CP_jrc_mus-epididymis-1-nuc__:
+- __CP_jrc_mus-epididymis-2-nuc__:
+- __CP_jrc_mus-kidney-3-nuc-2__:
+- __CP_jrc_mus-liver-3-nuc-2__:
+- __CP_jrc_mus-hippocampus-1-nuc-2__:
 
 ## Usage
 

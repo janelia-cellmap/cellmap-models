@@ -161,3 +161,6 @@ cython_debug/
 
 # Pytorch
 *.pth
+
+# Miscellaneous
+.DS_Store

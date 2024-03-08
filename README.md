@@ -1,3 +1,5 @@
+<img src="assets/CellMapLogo2.png" alt="CellMap logo" width="85%">
+
 # cellmap-models
 
 [![tests](https://github.com/janelia-cellmap/cellmap-models/actions/workflows/tests.yaml/badge.svg)](https://github.com/janelia-cellmap/cellmap-models/actions/workflows/tests.yaml)
