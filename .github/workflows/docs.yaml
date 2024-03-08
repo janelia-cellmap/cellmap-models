@@ -20,7 +20,7 @@ jobs:
         with:
           python-version: '3.10'
       - run: pip install -e .[dev]
-      - run: pdoc -o docs/ src/{{cookiecutter.project_slug}}
+      - run: pdoc -o docs/ src/cellmap_models
       - uses: actions/upload-pages-artifact@v3
         with:
           path: docs/
