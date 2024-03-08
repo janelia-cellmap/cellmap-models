@@ -1,3 +1,4 @@
+import os
 from pathlib import Path
 from cellpose.utils import download_url_to_file
 
@@ -20,10 +21,10 @@ def get_model(
             f"Model {model_name} is not available. Available models are {list(models_dict.keys())}."
         )
 
-    if not (base_path / f"{model_name}.pth").exists():
+    if not Path(base_path / f"{model_name}.pth").exists():
         print(f"Downloading {model_name} from {models_dict[model_name]}")
         download_url_to_file(
-            models_dict[model_name], str(base_path / f"{model_name}.pth")
+            models_dict[model_name], os.path.join(base_path, f"{model_name}.pth")
         )
     print("Downloaded model {model_name} to {base_path}.")
     return
