@@ -20,11 +20,9 @@ def get_model(
         raise ValueError(
             f"Model {model_name} is not available. Available models are {list(models_dict.keys())}."
         )
-
-    if not Path(base_path / f"{model_name}.pth").exists():
+    full_path = os.path.join(base_path, f"{model_name}.pth")
+    if not Path(full_path).exists():
         print(f"Downloading {model_name} from {models_dict[model_name]}")
-        download_url_to_file(
-            models_dict[model_name], os.path.join(base_path, f"{model_name}.pth")
-        )
+        download_url_to_file(models_dict[model_name], full_path)
     print("Downloaded model {model_name} to {base_path}.")
     return

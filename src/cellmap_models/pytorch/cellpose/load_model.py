@@ -1,3 +1,4 @@
+import os
 from pathlib import Path
 import torch
 from .get_model import get_model
@@ -23,6 +24,6 @@ def load_model(
     if device == "cuda" and not torch.cuda.is_available():
         device = "cpu"
         print("CUDA not available. Using CPU.")
-    model = torch.jit.load(str(base_path / f"{model_name}.pth"), device)
+    model = torch.jit.load(os.path.join(base_path, f"{model_name}.pth"), device)
     model.eval()
     return model
