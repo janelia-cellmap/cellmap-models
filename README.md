@@ -1,6 +1,13 @@
+![GitHub Org's stars](https://img.shields.io/github/stars/Janelia-cellmap)
+
+
 <img src="assets/CellMapLogo2.png" alt="CellMap logo" width="85%">
 
 # cellmap-models
+
+![GitHub Downloads (all assets, all releases)](https://img.shields.io/github/downloads/janelia-cellmap/cellmap-models/total)
+![GitHub License](https://img.shields.io/github/license/janelia-cellmap/cellmap-models)
+![Python Version from PEP 621 TOML](https://img.shields.io/python/required-version-toml?tomlFilePath=https%3A%2F%2Fraw.githubusercontent.com%2Fjanelia-cellmap%2Fcellmap-models%2Fmain%2Fpyproject.toml)
 
 [![tests](https://github.com/janelia-cellmap/cellmap-models/actions/workflows/tests.yaml/badge.svg)](https://github.com/janelia-cellmap/cellmap-models/actions/workflows/tests.yaml)
 [![black](https://github.com/janelia-cellmap/cellmap-models/actions/workflows/black.yaml/badge.svg)](https://github.com/janelia-cellmap/cellmap-models/actions/workflows/black.yaml)
