@@ -6,7 +6,7 @@ This repository contains the COSEM trained networks, converted to PyTorch. The o
 
 The networks have been converted to PyTorch from their original Tensorflow versions using the scripts available [here](https://github.com/pattonw/cnnectome.conversion). All models are trained on 3D data and expect input of shape `(batch_size, 1, z, y, x)`.
 
-You can load a model using the following code:
+You can load a PyTorch model using the following code:
 
 ```python
 import cellmap_models.cosem as cosem_models
