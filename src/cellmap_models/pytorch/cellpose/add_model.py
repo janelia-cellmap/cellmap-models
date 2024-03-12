@@ -16,7 +16,7 @@ def add_model(model_name: Optional[str] = None):
         model_name = sys.argv[1]
     base_path = MODEL_DIR
     get_model(model_name, base_path)
-    _add_model(os.path.join(base_path, f"{model_name}.pth"))
+    _add_model(os.path.join(base_path, f"{model_name}.pt"))
     print(
         f"Added model {model_name}. This will now be available in the cellpose model list."
     )

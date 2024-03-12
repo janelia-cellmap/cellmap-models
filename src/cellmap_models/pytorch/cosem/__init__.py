@@ -1,15 +1,17 @@
 from .load_model import load_model
 
-models_list = [
-    "setup04/1820500.pth",
-    "setup04/625000.pth",
-    "setup04/975000.pth",
-    "setup26.1/2580000.pth",
-    "setup26.1/650000.pth",
-    "setup28/1440000.pth",
-    "setup28/775000.pth",
-    "setup36/1100000.pth",
-    "setup36/500000.pth",
-    "setup45/1634500.pth",
-    "setup45/625000.pth",
-]
+models_dict = {
+    "setup04/1820500": "https://janelia-cosem-networks.s3.amazonaws.com/v0003.2-pytorch/cosem_models/cosem_models/setup04/1820500",
+    "setup04/625000": "https://janelia-cosem-networks.s3.amazonaws.com/v0003.2-pytorch/cosem_models/cosem_models/setup04/625000",
+    "setup04/975000": "https://janelia-cosem-networks.s3.amazonaws.com/v0003.2-pytorch/cosem_models/cosem_models/setup04/975000",
+    "setup26.1/2580000": "https://janelia-cosem-networks.s3.amazonaws.com/v0003.2-pytorch/cosem_models/cosem_models/setup26.1/2580000",
+    "setup26.1/650000": "https://janelia-cosem-networks.s3.amazonaws.com/v0003.2-pytorch/cosem_models/cosem_models/setup26.1/650000",
+    "setup28/1440000": "https://janelia-cosem-networks.s3.amazonaws.com/v0003.2-pytorch/cosem_models/cosem_models/setup28/1440000",
+    "setup28/775000": "https://janelia-cosem-networks.s3.amazonaws.com/v0003.2-pytorch/cosem_models/cosem_models/setup28/775000",
+    "setup36/1100000": "https://janelia-cosem-networks.s3.amazonaws.com/v0003.2-pytorch/cosem_models/cosem_models/setup36/1100000",
+    "setup36/500000": "https://janelia-cosem-networks.s3.amazonaws.com/v0003.2-pytorch/cosem_models/cosem_models/setup36/500000",
+    "setup45/1634500": "https://janelia-cosem-networks.s3.amazonaws.com/v0003.2-pytorch/cosem_models/cosem_models/setup45/1634500",
+    "setup45/625000": "https://janelia-cosem-networks.s3.amazonaws.com/v0003.2-pytorch/cosem_models/cosem_models/setup45/625000",
+}
+
+models_list = list(models_dict.keys())

@@ -26,13 +26,3 @@ final_kernel_size = [(3,) * 3, (3,) * 3]
 final_feature_width = 12 * 6
 
 classes_out = 2
-
-# download pretrained model checkpoints from s3
-urls = {
-    "1100000": "https://janelia-cosem-networks.s3.amazonaws.com/v0003.2-pytorch/cosem_models/cosem_models/setup36/1100000",
-    "500000": "https://janelia-cosem-networks.s3.amazonaws.com/v0003.2-pytorch/cosem_models/cosem_models/setup36/500000",
-}
-for name, url in urls.items():
-    if not (Path(__file__).parent / f"{name}").exists():
-        print(f"Downloading {name} from {url}")
-        download_url_to_file(url, str(Path(__file__).parent / f"{name}.pth"))

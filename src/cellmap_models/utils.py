@@ -7,8 +7,7 @@ from tqdm import tqdm
 
 
 def download_url_to_file(url, dst, progress=True):
-    # Originally from CellPose
-    """Download object at the given URL to a local path.
+    r"""Download object at the given URL to a local path.
             Thanks to torch, slightly modified
     Args:
         url (string): URL of the object to download
@@ -31,8 +30,8 @@ def download_url_to_file(url, dst, progress=True):
     # We deliberately save it in a temp file and move it after
     dst = os.path.expanduser(dst)
     dst_dir = os.path.dirname(dst)
-    f = tempfile.NamedTemporaryFile(delete=False, dir=dst_dir)
-    try:
+    os.makedirs(dst_dir, exist_ok=True)
+    with tempfile.NamedTemporaryFile(delete=False, dir=dst_dir) as f:
         with tqdm(
             total=file_size,
             disable=not progress,
@@ -48,7 +47,3 @@ def download_url_to_file(url, dst, progress=True):
                 pbar.update(len(buffer))
         f.close()
         shutil.move(f.name, dst)
-    finally:
-        f.close()
-        if os.path.exists(f.name):
-            os.remove(f.name)

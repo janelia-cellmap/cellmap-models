@@ -6,6 +6,7 @@ import torch
 from torch import nn
 from pathlib import Path
 from importlib.machinery import SourceFileLoader
+from cellmap_models import download_url_to_file
 
 default_params = {
     "in_channels": 1,
@@ -29,21 +30,36 @@ def get_param_dict(model_params):
     return param_dict
 
 
-def load_model(checkpoint_path):
+def load_model(checkpoint_name):
     """
     Load a model from a checkpoint file.
 
     Args:
-        checkpoint_path (str): Path to the checkpoint file.
+        checkpoint_name (str): Name of the checkpoint file.
     """
-    if not Path(checkpoint_path).exists():
-        checkpoint_path = Path(Path(__file__).parent / checkpoint_path)
+    from . import models_dict, models_list  # avoid circular import
+
+    # Make sure the checkpoint exists
+    if (
+        checkpoint_name not in models_dict
+        and Path(checkpoint_name).with_suffix(".pth") not in models_list
+    ):
+        raise ValueError(f"Model {checkpoint_name} not found")
+    checkpoint_path = Path(Path(__file__).parent / Path(checkpoint_name)).with_suffix(
+        ".pth"
+    )
+    if not checkpoint_path.exists():
+        url = models_dict[checkpoint_name]
+        print(f"Downloading {checkpoint_name} from {url}")
+        download_url_to_file(url, checkpoint_path)
+
     model_params = SourceFileLoader(
         "model", str(Path(checkpoint_path).parent / "model.py")
     ).load_module()
 
     model = Architecture(model_params)
 
+    print(f"Loading model from {checkpoint_path}")
     checkpoint = torch.load(checkpoint_path)
     new_checkpoint = deepcopy(checkpoint)
     for key in checkpoint["model"].keys():
