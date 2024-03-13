@@ -1,7 +1,7 @@
 ![GitHub Org's stars](https://img.shields.io/github/stars/Janelia-cellmap)
 
 
-<img src="assets/CellMapLogo2.png" alt="CellMap logo" width="85%">
+<img src="https://raw.githubusercontent.com/janelia-cellmap/cellmap-models/main/assets/CellMapLogo2.png" alt="CellMap logo" width="85%">
 
 # cellmap-models
 
