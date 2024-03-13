@@ -28,4 +28,4 @@ def get_model(
         print(f"Downloading {model_name} from {models_dict[model_name]}")
         download_url_to_file(models_dict[model_name], full_path)
     print(f"Downloaded model {model_name} to {base_path}.")
-    return
+    return full_path
