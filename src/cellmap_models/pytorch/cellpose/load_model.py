@@ -2,12 +2,13 @@ import os
 from pathlib import Path
 import torch
 from .get_model import get_model
+from cellpose.models import CellposeModel
 
 
 def load_model(
     model_name: str,
     base_path: str = f"{Path(__file__).parent}/models",
-    device: str = "cuda",
+    device: str | torch.device = "cuda",
 ) -> torch.nn.Module:
     """Load model
 
@@ -19,12 +20,15 @@ def load_model(
     Returns:
         model: model
     """
-
-    get_model(model_name, base_path)
+    model_path = get_model(model_name, base_path)
     if device == "cuda" and not torch.cuda.is_available():
         device = "cpu"
         print("CUDA not available. Using CPU.")
-    # TODO: load using cellpose utilities
-    model = torch.jit.load(os.path.join(base_path, f"{model_name}.pt"), device)
-    model.eval()
+    if isinstance(device, str):
+        device = torch.device(device)
+
+    model = CellposeModel(pretrained_model=model_path, device=device)
+
+    print(f"{model.diam_labels} diameter labels were used for training")
+
     return model
