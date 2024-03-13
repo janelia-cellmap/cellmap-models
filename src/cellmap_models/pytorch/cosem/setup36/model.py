@@ -1,6 +1,4 @@
-from pathlib import Path
 import numpy as np
-from cellmap_models import download_url_to_file
 
 # voxel size parameters
 voxel_size_output = np.array((4,) * 3)

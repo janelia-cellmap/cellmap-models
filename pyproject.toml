@@ -31,9 +31,7 @@ dev = [
   'black',
   'mypy',
   'pdoc',
-  'pre-commit'
-]
-pretrained = [
+  'pre-commit',
   'cellpose[gui]'
 ]
 

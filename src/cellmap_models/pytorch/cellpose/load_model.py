@@ -8,7 +8,7 @@ def load_model(
     model_name: str,
     base_path: str = f"{Path(__file__).parent}/models",
     device: str = "cuda",
-):
+) -> torch.nn.Module:
     """Load model
 
     Args:
@@ -24,6 +24,7 @@ def load_model(
     if device == "cuda" and not torch.cuda.is_available():
         device = "cpu"
         print("CUDA not available. Using CPU.")
+    # TODO: load using cellpose utilities
     model = torch.jit.load(os.path.join(base_path, f"{model_name}.pt"), device)
     model.eval()
     return model

@@ -30,34 +30,46 @@ def get_param_dict(model_params):
     return param_dict
 
 
-def load_model(checkpoint_name):
+def load_model(checkpoint_name: str) -> torch.nn.Module:
     """
     Load a model from a checkpoint file.
 
     Args:
         checkpoint_name (str): Name of the checkpoint file.
     """
-    from . import models_dict, models_list  # avoid circular import
+    from . import models_dict, models_list, model_names  # avoid circular import
 
     # Make sure the checkpoint exists
     if (
         checkpoint_name not in models_dict
         and Path(checkpoint_name).with_suffix(".pth") not in models_list
     ):
-        raise ValueError(f"Model {checkpoint_name} not found")
-    checkpoint_path = Path(Path(__file__).parent / Path(checkpoint_name)).with_suffix(
-        ".pth"
-    )
-    if not checkpoint_path.exists():
-        url = models_dict[checkpoint_name]
-        print(f"Downloading {checkpoint_name} from {url}")
-        download_url_to_file(url, checkpoint_path)
+        if checkpoint_name in model_names:
+            checkpoint_path = Path(
+                Path(__file__).parent / Path(checkpoint_name) / "model.py"
+            )
+            no_weights = True
+        else:
+            raise ValueError(f"Model {checkpoint_name} not found")
+    else:
+        checkpoint_path = Path(
+            Path(__file__).parent / Path(checkpoint_name)
+        ).with_suffix(".pth")
+        if not checkpoint_path.exists():
+            url = models_dict[checkpoint_name]
+            print(f"Downloading {checkpoint_name} from {url}")
+            download_url_to_file(url, checkpoint_path)
+        no_weights = False
 
     model_params = SourceFileLoader(
         "model", str(Path(checkpoint_path).parent / "model.py")
     ).load_module()
 
     model = Architecture(model_params)
+
+    if no_weights:
+        print(f"Not loading weights for {checkpoint_name}.")
+        return model
 
     print(f"Loading model from {checkpoint_path}")
     checkpoint = torch.load(checkpoint_path)
@@ -69,6 +81,7 @@ def load_model(checkpoint_name):
         new_key = key.replace("architecture.", "")
         new_checkpoint["model"][new_key] = new_checkpoint["model"].pop(key)
     model.load_state_dict(new_checkpoint["model"])
+    model.eval()
 
     return model
 

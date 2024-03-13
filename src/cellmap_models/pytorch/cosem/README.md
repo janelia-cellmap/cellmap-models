@@ -1,4 +1,4 @@
-<img src="../../../../assets/COSEM_logo_semi-invert_transparent.png" alt="CellMap logo" width="85%">
+<img src="https://raw.githubusercontent.com/janelia-cellmap/cellmap-models/main/assets/COSEM_logo_semi-invert_transparent.png" alt="COSEM logo" width="85%">
 
 # COSEM Trained PyTorch Networks
 

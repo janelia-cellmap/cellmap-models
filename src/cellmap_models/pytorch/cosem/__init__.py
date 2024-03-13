@@ -15,3 +15,5 @@ models_dict = {
 }
 
 models_list = list(models_dict.keys())
+
+model_names = list(set(x.split("/")[0] for x in models_list))
