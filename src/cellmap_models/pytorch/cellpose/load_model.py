@@ -1,5 +1,6 @@
 import os
 from pathlib import Path
+from typing import Union
 import torch
 from .get_model import get_model
 from cellpose.models import CellposeModel
@@ -8,7 +9,7 @@ from cellpose.models import CellposeModel
 def load_model(
     model_name: str,
     base_path: str = f"{Path(__file__).parent}/models",
-    device: str | torch.device = "cuda",
+    device: Union[str, torch.device] = "cuda",
 ) -> torch.nn.Module:
     """Load model
 
