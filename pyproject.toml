@@ -21,6 +21,7 @@ dependencies = [
   'torchvision',
   'numpy',
   "tqdm",
+  'cellpose[gui]'
 ]
 
 [project.optional-dependencies]
@@ -32,7 +33,6 @@ dev = [
   'mypy',
   'pdoc',
   'pre-commit',
-  'cellpose[gui]'
 ]
 
 [project.urls]
