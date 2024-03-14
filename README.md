@@ -21,9 +21,9 @@ This package contains the models used for segmention by the CellMap project team
 We strongly recommend installing within a [conda](https://docs.anaconda.com/free/miniconda/#quick-command-line-install) (or [mamba](https://mamba.readthedocs.io/en/latest/installation/micromamba-installation.html#automatic-install)) environment to install the package.
 
 ```bash
-conda env create -n cellmap python=3.10 pytorch -c pytorch -c conda-forge
+conda env create -n cellmap python=3.10 pytorch -c pytorch
 conda activate cellmap
-pip install git+https://github.com/janelia-cellmap/cellmap-models
+pip install cellmap-models
 ```
 
 ## Usage
