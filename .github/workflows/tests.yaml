@@ -23,7 +23,7 @@ jobs:
         pip install ".[dev]"
     - name: Test with pytest
       run: |
-        pytest --color=yes --cov={{cookiecutter.project_slug}} --cov-report=xml --cov-report=term-missing tests
+        pytest --color=yes --cov=cellmap_models --cov-report=xml --cov-report=term-missing tests
     # Coverage should work out of the box for public repos. For private repos, more setup is likely required.
     - name: Coverage
       uses: codecov/codecov-action@v4

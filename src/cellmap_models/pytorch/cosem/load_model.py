@@ -46,14 +46,16 @@ def load_model(checkpoint_name: str) -> torch.nn.Module:
     ):
         if checkpoint_name in model_names:
             checkpoint_path = Path(
-                Path(__file__).parent / Path(checkpoint_name) / "model.py"
+                Path(__file__).parent
+                / Path(checkpoint_name.replace(".", "_"))
+                / "model.py"
             )
             no_weights = True
         else:
             raise ValueError(f"Model {checkpoint_name} not found")
     else:
         checkpoint_path = Path(
-            Path(__file__).parent / Path(checkpoint_name)
+            Path(__file__).parent / Path(checkpoint_name.replace(".", "_"))
         ).with_suffix(".pth")
         if not checkpoint_path.exists():
             url = models_dict[checkpoint_name]
