@@ -253,6 +253,31 @@ class Architecture(torch.nn.Module):
         self.min_output_shape = min_output_shape
         self.input_size_step = step
 
+    def round_to_valid_input_shape(self, shape=None, mode="grow"):
+        """
+        Round a shape to the nearest valid input shape for this U-Net.
+
+        Args:
+            shape: Shape to be rounded.
+            mode: Mode for rounding. Can be "grow" or "shrink". If "grow", the shape will be rounded up to the nearest
+                valid shape. If "shrink", the shape will be rounded down to the nearest valid shape.
+
+        Returns:
+            The rounded shape.
+        """
+        if shape is None:
+            return self.min_input_shape
+        remainder = np.array(shape) % self.input_size_step
+        if mode == "grow":
+            return shape + (self.input_size_step - remainder)
+        elif mode == "shrink":
+            shape -= remainder
+            if any([r < m for (r, m) in zip(shape, self.min_input_shape)]):
+                return self.min_input_shape
+            return shape
+        else:
+            raise ValueError(f"Unknown mode {mode}. Use 'grow' or 'shrink'.")
+
 
 class CNNectomeUNetModule(torch.nn.Module):
     def __init__(

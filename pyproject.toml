@@ -10,12 +10,12 @@ requires-python = ">=3.7"
 classifiers = [
   "Programming Language :: Python :: 3",
 ]
-keywords = []
+keywords = ["machine learning", "deep learning", "cell segmentation", "cellpose", "cellmap"]
 license = { text = "BSD 3-Clause License" }
 authors = [
-    { email = "rhoadesj@hhmi.org", name = "CellMap" },
+    { email = "rhoadesj@hhmi.org", name = "Jeff Rhoades" },
 ]
-dynamic = ["version"]
+version = "0.0.0"
 dependencies = [
   'torch',
   'torchvision',
@@ -36,7 +36,7 @@ dev = [
 ]
 
 [project.urls]
-homepage = "https://github.com/janelia-cellmap/cellmap-models"
+homepage = "https://janelia-cellmap.github.io/cellmap-models"
 repository = "https://github.com/janelia-cellmap/cellmap-models"
 
 [tool.mypy]
