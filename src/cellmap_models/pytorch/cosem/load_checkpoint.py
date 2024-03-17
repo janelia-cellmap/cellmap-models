@@ -8,7 +8,7 @@ def download_checkpoint(checkpoint_name: str, checkpoint_path: Path):
 
     Args:
         checkpoint_name (str): Name of the checkpoint file.
-        local_folder (Path): Local folder to save the checkpoint.
+        local_folder (Path): Local path to save the checkpoint.
     return:
         checkpoint_path (Path): Path to the downloaded checkpoint.
     """
