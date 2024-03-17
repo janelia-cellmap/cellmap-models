@@ -2,7 +2,7 @@ from pathlib import Path
 from cellmap_models import download_url_to_file
 
 
-def download_checkpoint(checkpoint_name: str, local_folder: Path):
+def download_checkpoint(checkpoint_name: str, checkpoint_path: Path):
     """
     download models checkpoint from s3 bucket.
 
@@ -20,9 +20,6 @@ def download_checkpoint(checkpoint_name: str, local_folder: Path):
             f"Checkpoint {checkpoint_name} not found. Available checkpoints: {models_list}"
         )
 
-    checkpoint_path = Path(
-        local_folder / Path(checkpoint_name.replace(".", "_"))
-    ).with_suffix(".pth")
     if not checkpoint_path.exists():
         url = models_dict[checkpoint_name]
         print(f"Downloading {checkpoint_name} from {url}")
