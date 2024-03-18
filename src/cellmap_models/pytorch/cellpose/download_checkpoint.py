@@ -4,7 +4,7 @@ from cellmap_models import download_url_to_file
 
 def download_checkpoint(checkpoint_name: str, checkpoint_path: Path):
     """
-    download models checkpoint from s3 bucket.
+    download models checkpoint from github release.
 
     Args:
         checkpoint_name (str): Name of the checkpoint file.
