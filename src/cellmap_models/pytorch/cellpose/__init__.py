@@ -1,6 +1,7 @@
 from .add_model import add_model
 from .load_model import load_model
 from .get_model import get_model
+from .download_checkpoint import download_checkpoint
 
 models_dict = {
     "jrc_mus-epididymis-1_nuc_cp": "https://github.com/janelia-cellmap/cellmap-models/releases/download/2024.03.08/jrc_mus-epididymis-1_nuc_cp",
