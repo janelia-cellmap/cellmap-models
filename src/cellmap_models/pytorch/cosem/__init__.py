@@ -1,4 +1,5 @@
 from .load_model import load_model
+from .download_checkpoint import download_checkpoint
 
 models_dict = {
     "setup04/1820500": "https://janelia-cosem-networks.s3.amazonaws.com/v0003.2-pytorch/cosem_models/cosem_models/setup04/1820500",
