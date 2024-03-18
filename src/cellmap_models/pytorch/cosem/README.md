@@ -20,12 +20,12 @@ Available models can be seen with the following code:
 cosem_models.models_list
 ```
 
-Each model has a separate unet backbone and single layer prediction head. The `unet` and `head` objects are both PyTorch modules and can be used as such. You can access the separate components of the model using the following code:
+Each model has a separate backbone and single layer prediction head. The `backbone` and `head` objects are both PyTorch modules and can be used as such. You can access the separate components of the model using the following code:
 
 ```python
 import cellmap_models.cosem as cosem_models
 model = cosem_models.load_model('setup04/1820500')
-unet = model.unet
+backnone = model.backbone
 head = model.prediction_head
 ```
 

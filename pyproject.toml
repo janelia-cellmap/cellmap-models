@@ -15,12 +15,13 @@ license = { text = "BSD 3-Clause License" }
 authors = [
     { email = "rhoadesj@hhmi.org", name = "Jeff Rhoades" },
 ]
-version = "0.0.0"
+version = "0.0.1"
 dependencies = [
   'torch',
   'torchvision',
   'numpy',
-  "tqdm",
+  'tqdm',
+  'cellpose'
 ]
 
 [project.optional-dependencies]
@@ -32,8 +33,9 @@ dev = [
   'mypy',
   'pdoc',
   'pre-commit',
-  'cellpose[gui]'
 ]
+pretrained = ['cellpose[gui]']
+all = ["cellmap-models[dev,pretrained]"]
 
 [project.urls]
 homepage = "https://janelia-cellmap.github.io/cellmap-models"
