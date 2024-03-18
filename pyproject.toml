@@ -20,8 +20,8 @@ dependencies = [
   'torch',
   'torchvision',
   'numpy',
-  "tqdm",
-  'cellpose[gui]'
+  'tqdm',
+  'cellpose'
 ]
 
 [project.optional-dependencies]
@@ -34,6 +34,8 @@ dev = [
   'pdoc',
   'pre-commit',
 ]
+pretrained = ['cellpose[gui]']
+all = ["cellmap-models[dev,pretrained]"]
 
 [project.urls]
 homepage = "https://janelia-cellmap.github.io/cellmap-models"
