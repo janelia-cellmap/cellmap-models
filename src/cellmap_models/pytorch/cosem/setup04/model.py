@@ -24,3 +24,19 @@ final_kernel_size = [(3,) * 3, (3,) * 3]
 final_feature_width = 12 * 6
 
 classes_out = 14
+classes_channels = [
+    "ecs",
+    "pm",
+    "mito",
+    "mito_mem",
+    "ves",
+    "ves_mem",
+    "endo",
+    "endo_mem",
+    "er",
+    "er_mem",
+    "eres",
+    "nuc",
+    "mt",
+    "mt_out",
+]
