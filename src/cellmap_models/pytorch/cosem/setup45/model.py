@@ -24,3 +24,4 @@ final_kernel_size = [(3,) * 3, (3,) * 3]
 final_feature_width = 12 * 6
 
 classes_out = 2
+classes_channels = ["ecs", "pm"]
