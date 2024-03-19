@@ -127,7 +127,7 @@ class Architecture(torch.nn.Module):
             kernel_size=(1,) * 3,
         )
         model = torch.nn.Sequential(*layers)
-        self.unet = model
+        self.backbone = model
         self.prediction_head = prediction_head
         for k, v in model_params.__dict__.items():
             setattr(self, k, v)
@@ -136,7 +136,7 @@ class Architecture(torch.nn.Module):
         self.compute_minimal_shapes()
 
     def forward(self, x):
-        return self.prediction_head(self.unet(x))
+        return self.prediction_head(self.backbone(x))
 
     def compute_minimal_shapes(self):
         """
