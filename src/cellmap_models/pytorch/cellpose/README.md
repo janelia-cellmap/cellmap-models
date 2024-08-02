@@ -5,7 +5,7 @@ This directory contains scripts for downloading finetuned Cellpose models, parti
 
 ## Models
 
-### Trained on p7 mouse tissues
+### Trained on mouse tissues
 **jrc_mus-epididymis-1_nuc_cp:**
 
 **jrc_mus-epididymis-2_nuc_cp:**
