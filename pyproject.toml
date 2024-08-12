@@ -21,7 +21,8 @@ dependencies = [
   'torchvision',
   'numpy',
   'tqdm',
-  'cellpose'
+  'cellpose',
+  'ml-collections',
 ]
 
 [project.optional-dependencies]
