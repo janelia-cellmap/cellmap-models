@@ -6,6 +6,7 @@ import torch.nn.functional as F
 # Original source code from:
 # https://github.com/milesial/Pytorch-UNet/blob/master/unet/unet_model.py
 
+
 class UNet2D(nn.Module):
     def __init__(self, n_channels, n_classes, trilinear=False):
         super(UNet2D, self).__init__()
@@ -38,9 +39,11 @@ class UNet2D(nn.Module):
         logits = self.outc(x)
         return logits
 
+
 """ Parts of the 2D U-Net model """
 # Original source code from:
 # https://github.com/milesial/Pytorch-UNet/blob/master/unet/unet_parts.py
+
 
 class DoubleConv(nn.Module):
     """(convolution => [BN] => ReLU) * 2"""

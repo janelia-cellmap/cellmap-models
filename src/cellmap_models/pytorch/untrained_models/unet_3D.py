@@ -1,4 +1,3 @@
-
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -6,6 +5,7 @@ import torch.nn.functional as F
 """ Full assembly of the parts to form the complete network """
 # Original source code from:
 # https://github.com/milesial/Pytorch-UNet/blob/master/unet/unet_model.py
+
 
 class UNet3D(nn.Module):
     def __init__(self, n_channels, n_classes, trilinear=False):
@@ -39,10 +39,12 @@ class UNet3D(nn.Module):
         logits = self.outc(x)
         return logits
 
+
 """ Parts of the U-Net model """
 # Adapted from:
 # https://github.com/milesial/Pytorch-UNet/blob/master/unet/unet_parts.py
 # By Emma Avetissian, @aemmav
+
 
 class DoubleConv(nn.Module):
     """(convolution => [BN] => ReLU) * 2"""
