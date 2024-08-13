@@ -9,7 +9,7 @@ The networks have been converted to PyTorch from their original Tensorflow versi
 You can load a PyTorch model using the following code:
 
 ```python
-import cellmap_models.cosem as cosem_models
+import cellmap_models.pytorch.cosem as cosem_models
 model = cosem_models.load_model('setup04/1820500')
 # The model is now ready to use
 ```
@@ -23,7 +23,7 @@ cosem_models.models_list
 Each model has a separate backbone and single layer prediction head. The `backbone` and `head` objects are both PyTorch modules and can be used as such. You can access the separate components of the model using the following code:
 
 ```python
-import cellmap_models.cosem as cosem_models
+import cellmap_models.pytorch.cosem as cosem_models
 model = cosem_models.load_model('setup04/1820500')
 backbone = model.backbone
 head = model.prediction_head

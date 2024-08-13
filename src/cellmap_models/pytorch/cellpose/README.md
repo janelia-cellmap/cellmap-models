@@ -62,7 +62,7 @@ Once you have chosen a model based on the descriptions above, you can download i
 If you would like to load a model for your own use, you can do the following:
 
 ```python
-from cellmap_models.cellpose import load_model
+from cellmap_models.pytorch.cellpose import load_model
 model = load_model('<model_name>')
 ```
 
