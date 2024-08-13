@@ -81,6 +81,7 @@ def load_model(checkpoint_name: str) -> torch.nn.Module:
             new_checkpoint["model"].pop(key)
             continue
         new_key = key.replace("architecture.", "")
+        new_key = new_key.replace("unet.", "backbone.")
         new_checkpoint["model"][new_key] = new_checkpoint["model"].pop(key)
     model.load_state_dict(new_checkpoint["model"])
     model.eval()

@@ -25,7 +25,7 @@ Each model has a separate backbone and single layer prediction head. The `backbo
 ```python
 import cellmap_models.cosem as cosem_models
 model = cosem_models.load_model('setup04/1820500')
-backnone = model.backbone
+backbone = model.backbone
 head = model.prediction_head
 ```
 

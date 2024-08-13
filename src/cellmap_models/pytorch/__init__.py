@@ -1,2 +1,1 @@
-from . import cosem
-from . import cellpose
+from . import cosem, cellpose, untrained_models
