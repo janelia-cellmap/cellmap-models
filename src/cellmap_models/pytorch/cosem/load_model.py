@@ -252,7 +252,7 @@ class Architecture(torch.nn.Module):
 
         self.min_input_shape = [int(s) for s in min_input_shape]
         self.min_output_shape = [int(s) for s in min_output_shape]
-        self.input_size_step = int(step)
+        self.input_size_step = [int(s) for s in step]
 
     def round_to_valid_input_shape(self, shape=None, mode="grow"):
         """
