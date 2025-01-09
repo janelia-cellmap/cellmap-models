@@ -250,9 +250,9 @@ class Architecture(torch.nn.Module):
             ) * np.prod(self.downsample_factors[lv:], axis=0)
             min_output_shape -= total_pad
 
-        self.min_input_shape = min_input_shape
-        self.min_output_shape = min_output_shape
-        self.input_size_step = step
+        self.min_input_shape = [int(s) for s in min_input_shape]
+        self.min_output_shape = [int(s) for s in min_output_shape]
+        self.input_size_step = int(step)
 
     def round_to_valid_input_shape(self, shape=None, mode="grow"):
         """
