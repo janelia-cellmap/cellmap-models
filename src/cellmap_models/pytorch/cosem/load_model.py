@@ -229,28 +229,29 @@ class Architecture(torch.nn.Module):
 
             min_input_shape += total_pad
 
-        # PART 3: calculate the minimum output shape by propagating from the "bottom right" to the output of the U-Net
-        min_output_shape = np.copy(min_bottom_right)
-        for lv in range(len(self.downsample_factors))[
-            ::-1
-        ]:  # go through upsampling path
-            min_output_shape *= self.downsample_factors[
-                lv
-            ]  # calculate shape after upsampling
+        # # PART 3: calculate the minimum output shape by propagating from the "bottom right" to the output of the U-Net
+        # min_output_shape = np.copy(min_bottom_right)
+        # for lv in range(len(self.downsample_factors))[
+        #     ::-1
+        # ]:  # go through upsampling path
+        #     min_output_shape *= self.downsample_factors[
+        #         lv
+        #     ]  # calculate shape after upsampling
 
-            # calculate shape after convolutions on current level
-            kernels = np.copy(self.kernel_sizes_up[lv])
-            total_pad = np.sum(
-                [np.array(k) - np.array((1.0, 1.0, 1.0)) for k in kernels], axis=0
-            )
+        #     # calculate shape after convolutions on current level
+        #     kernels = np.copy(self.kernel_sizes_up[lv])
+        #     total_pad = np.sum(
+        #         [np.array(k) - np.array((1.0, 1.0, 1.0)) for k in kernels], axis=0
+        #     )
 
-            # same rational for translational equivariance as above in PART 1
-            total_pad = np.ceil(
-                total_pad / np.prod(self.downsample_factors[lv:], axis=0, dtype=float)
-            ) * np.prod(self.downsample_factors[lv:], axis=0)
-            min_output_shape -= total_pad
+        #     # same rational for translational equivariance as above in PART 1
+        #     total_pad = np.ceil(
+        #         total_pad / np.prod(self.downsample_factors[lv:], axis=0, dtype=float)
+        #     ) * np.prod(self.downsample_factors[lv:], axis=0)
+        #     min_output_shape -= total_pad
 
         self.min_input_shape = [int(s) for s in min_input_shape]
+        min_output_shape = self(torch.ones((1, 1, *self.min_input_shape))).shape[2:]
         self.min_output_shape = [int(s) for s in min_output_shape]
         self.input_size_step = [int(s) for s in step]
 
