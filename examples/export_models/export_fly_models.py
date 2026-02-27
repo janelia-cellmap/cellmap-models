@@ -5,14 +5,15 @@ import numpy as np
 from cellmap_models.model_export.generate_metadata import ModelMetadata, export_metadata, get_export_folder
 from cellmap_models.model_export.export_model import export_torch_model
 import cellmap_models.model_export.config as c
-c.EXPORT_FOLDER = "/groups/cellmap/cellmap/zouinkhim/models/saalfeldlab/fly"
 import os
+c.EXPORT_FOLDER = os.environ["CELLMAP_EXPORT_FOLDER"]  # e.g. export CELLMAP_EXPORT_FOLDER=/path/to/export
 os.chdir(c.EXPORT_FOLDER)
 
+checkpoints_dir = os.environ["CELLMAP_CHECKPOINTS_DIR"]  # e.g. export CELLMAP_CHECKPOINTS_DIR=/path/to/checkpoints
 #%%
-models = {"run07":{700000:"/nrs/saalfeld/heinrichl/fly_organelles/run07/model_checkpoint_700000",
-                   432000:"/nrs/saalfeld/heinrichl/fly_organelles/run07/model_checkpoint_432000"},
-          "run08":{438000:"/nrs/saalfeld/heinrichl/fly_organelles/run08/model_checkpoint_438000"}}
+models = {"run07":{700000:os.path.join(checkpoints_dir, "run07/model_checkpoint_700000"),
+                   432000:os.path.join(checkpoints_dir, "run07/model_checkpoint_432000")},
+          "run08":{438000:os.path.join(checkpoints_dir, "run08/model_checkpoint_438000")}}
 
 
 #%%

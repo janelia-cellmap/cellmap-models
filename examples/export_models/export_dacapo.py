@@ -6,9 +6,9 @@ marwan_models = {
 from cellmap_models.model_export.dacapo_model import export_dacapo_model
 
 # %%
-import cellmap_models.model_export.config as c
-c.EXPORT_FOLDER = "/groups/cellmap/cellmap/zouinkhim/models/cellmap/marwan"
 import os
+import cellmap_models.model_export.config as c
+c.EXPORT_FOLDER = os.environ["CELLMAP_EXPORT_FOLDER"]  # e.g. export CELLMAP_EXPORT_FOLDER=/path/to/export
 os.chdir(c.EXPORT_FOLDER)
 #%%
 for k,v in marwan_models.items():

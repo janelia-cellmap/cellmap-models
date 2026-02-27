@@ -5,6 +5,48 @@ import os
 omnx_version = 17
 
 
+def push_to_huggingface(folder_path, repo_id, commit_message=None, private=False):
+    """
+    Upload an exported model folder to Hugging Face Hub.
+    Auto-generates a HuggingFace model card from metadata.json if present.
+
+    Args:
+        folder_path: Path to the exported model folder (containing model.pt, metadata.json, etc.)
+        repo_id: HuggingFace repo id, e.g. "janelia-cellmap/my-model"
+        commit_message: Optional commit message. Defaults to "Upload {folder_name}".
+        private: Whether to create a private repo. Defaults to False.
+    """
+    import json
+    from huggingface_hub import HfApi
+    from .generate_metadata import ModelMetadata, generate_huggingface_readme
+
+    # Generate HF model card from metadata.json
+    metadata_file = os.path.join(folder_path, "metadata.json")
+    if os.path.exists(metadata_file):
+        with open(metadata_file, "r") as f:
+            data = json.load(f)
+        metadata = ModelMetadata(**data)
+        readme_content = generate_huggingface_readme(metadata)
+        readme_path = os.path.join(folder_path, "README.md")
+        with open(readme_path, "w") as f:
+            f.write(readme_content)
+        print(f"Generated HuggingFace model card at {readme_path}")
+
+    api = HfApi()
+    folder_name = os.path.basename(folder_path.rstrip("/"))
+    if commit_message is None:
+        commit_message = f"Upload {folder_name}"
+
+    api.create_repo(repo_id=repo_id, exist_ok=True, private=private)
+    api.upload_folder(
+        folder_path=folder_path,
+        repo_id=repo_id,
+        repo_type="model",
+        commit_message=commit_message,
+    )
+    print(f"Model uploaded to https://huggingface.co/{repo_id}")
+
+
 def export_torch_model(model, input_shape, folder_result, metadata=None):
     if not os.path.exists(folder_result):
         os.makedirs(folder_result)

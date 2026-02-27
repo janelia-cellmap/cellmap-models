@@ -38,6 +38,7 @@ class CellmapModel:
         self._pt_model = None
         self._ts_model = None
         self._exported_model = None
+        self.check()  # Validate structure on initialization
 
     @property
     def metadata(self) -> ModelMetadata:
@@ -171,6 +172,48 @@ class CellmapModel:
 
         print("No trainable model format found (model.pt2 or model.ts)")
         return None
+
+    def check(self) -> bool:
+        """
+        Validate that the folder is a valid CellmapModel structure.
+        Requires metadata.json to be valid and at least one model file to exist.
+        Returns True if valid, raises ValueError otherwise.
+        """
+        errors = []
+
+        # Check folder exists
+        if not os.path.isdir(self.folder_path):
+            raise ValueError(f"Folder does not exist: {self.folder_path}")
+
+        # Check metadata.json
+        metadata_file = os.path.join(self.folder_path, "metadata.json")
+        if not os.path.exists(metadata_file):
+            errors.append("metadata.json not found")
+        else:
+            try:
+                with open(metadata_file, "r") as f:
+                    data = json.load(f)
+                ModelMetadata(**data)
+            except Exception as e:
+                errors.append(f"metadata.json is invalid: {e}")
+
+        # Check at least one model file exists
+        model_files = {
+            "model.pt": ".pt (PyTorch pickle)",
+            "model.ts": ".ts (TorchScript)",
+            "model.pt2": ".pt2 (torch.export)",
+            "model.onnx": ".onnx (ONNX)",
+        }
+        found = [name for name in model_files if os.path.exists(os.path.join(self.folder_path, name))]
+        if not found:
+            errors.append(f"No model files found (expected at least one of: {', '.join(model_files.keys())})")
+
+        if errors:
+            raise ValueError(f"Invalid CellmapModel at {self.folder_path}:\n  - " + "\n  - ".join(errors))
+
+        print(f"Valid CellmapModel: {self.folder_path}")
+        print(f"  Model files: {', '.join(found)}")
+        return True
 
     @property
     def readme(self) -> Optional[str]:

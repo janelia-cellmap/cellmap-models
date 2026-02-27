@@ -67,6 +67,88 @@ def _format_list(values):
     return ", ".join(str(v) for v in values)
 
 
+def generate_huggingface_readme(metadata: ModelMetadata):
+    """Generate a HuggingFace model card README with YAML frontmatter."""
+    tags = ["pytorch", "onnx", "torchscript", "3d", "segmentation", "electron-microscopy", "cellmap"]
+    if metadata.channels_names:
+        tags.extend(metadata.channels_names)
+
+    readme = f"""---
+library_name: cellmap-models
+tags:
+{chr(10).join(f"- {t}" for t in tags)}
+license: bsd-3-clause
+---
+
+# {metadata.model_name or "Unnamed"}
+
+{metadata.description or ""}
+
+## Model Details
+
+| | |
+|---|---|
+| **Architecture** | {metadata.model_type or "N/A"} |
+| **Framework** | {metadata.framework or "N/A"} |
+| **Spatial Dims** | {metadata.spatial_dims or "N/A"} |
+| **Input Channels** | {metadata.in_channels or "N/A"} |
+| **Output Channels** | {metadata.out_channels or "N/A"} |
+| **Channel Names** | {_format_list(metadata.channels_names)} |
+| **Iteration** | {metadata.iteration or "N/A"} |
+| **Input Voxel Size** | {_format_list(metadata.input_voxel_size)} nm |
+| **Output Voxel Size** | {_format_list(metadata.output_voxel_size)} nm |
+| **Inference Input Shape** | {_format_list(metadata.inference_input_shape)} |
+| **Inference Output Shape** | {_format_list(metadata.inference_output_shape)} |
+
+## Available Formats
+
+| File | Format | Usage |
+|---|---|---|
+| `model.pt` | PyTorch pickle | `torch.load("model.pt")` |
+| `model.ts` | TorchScript | `torch.jit.load("model.ts")` |
+| `model.onnx` | ONNX | `onnxruntime.InferenceSession("model.onnx")` |
+| `metadata.json` | JSON | Model metadata |
+
+## Usage
+
+```bash
+pip install cellmap-models
+```
+
+```python
+from cellmap_models.model_export.cellmap_model import CellmapModel
+
+model = CellmapModel("path/to/model/folder")
+
+# Inference
+output = model.ts_model(input_tensor)
+
+# Finetuning
+trainable_model = model.train()
+```
+
+Or download from this repo and load directly:
+
+```python
+from huggingface_hub import snapshot_download
+from cellmap_models.model_export.cellmap_model import CellmapModel
+
+path = snapshot_download(repo_id="{metadata.model_name or 'janelia-cellmap/model'}")
+model = CellmapModel(path)
+```
+
+## Author
+
+{metadata.author or "CellMap Project Team, HHMI Janelia"}
+
+## Links
+
+- [cellmap-models](https://github.com/janelia-cellmap/cellmap-models)
+- [CellMap Project](https://www.janelia.org/project-team/cellmap)
+"""
+    return readme
+
+
 def generate_readme(metadata: ModelMetadata):
     readme_content = f"""# {metadata.model_name or "Unnamed"} Model
 iteration: {metadata.iteration}

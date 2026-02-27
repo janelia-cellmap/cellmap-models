@@ -133,3 +133,17 @@ model = cellmap_model.train()
 # Returns an nn.Module in train mode
 # Tries torch.export (model.pt2) + unflatten first, falls back to TorchScript
 ```
+
+### Push an exported model to Hugging Face Hub
+
+```python
+from cellmap_models.model_export import push_to_huggingface
+
+push_to_huggingface(
+    folder_path="/path/to/export/folder/my_model",
+    repo_id="janelia-cellmap/my-model",
+)
+```
+
+Requires `pip install cellmap-models[huggingface]` or `pip install huggingface-hub`.
+You must be logged in via `huggingface-cli login` first.
