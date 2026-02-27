@@ -5,6 +5,9 @@ import os
 import cellmap_models.model_export.config as c
 
 
+CURRENT_FORMAT_VERSION = "1"
+
+
 def get_export_folder():
     if c.EXPORT_FOLDER is not None:
         return c.EXPORT_FOLDER
@@ -59,6 +62,7 @@ class ModelMetadata(BaseModel):
     author: Optional[str] = Field(None, description="Author of the model")
     description: Optional[str] = Field(None, description="Description of the model")
     version: Optional[str] = Field("1.0.0", description="Version of the model")
+    format_version: Optional[str] = Field(CURRENT_FORMAT_VERSION, description="CellmapModel format version")
 
 
 def _format_list(values):

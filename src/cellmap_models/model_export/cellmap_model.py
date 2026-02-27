@@ -2,7 +2,7 @@ import os
 import json
 from typing import List, Dict, Optional
 from pydantic import BaseModel, Field
-from .generate_metadata import ModelMetadata
+from .generate_metadata import ModelMetadata, CURRENT_FORMAT_VERSION
 
 # For demonstration of loading .onnx and .pt / .ts models:
 try:
@@ -196,6 +196,17 @@ class CellmapModel:
                 ModelMetadata(**data)
             except Exception as e:
                 errors.append(f"metadata.json is invalid: {e}")
+
+        # Check format version
+        if not errors:
+            with open(metadata_file, "r") as f:
+                data = json.load(f)
+            fmt = data.get("format_version", "1")
+            if int(fmt) > int(CURRENT_FORMAT_VERSION):
+                errors.append(
+                    f"Format version {fmt} is newer than supported version {CURRENT_FORMAT_VERSION}. "
+                    f"Please upgrade cellmap-models: pip install --upgrade cellmap-models"
+                )
 
         # Check at least one model file exists
         model_files = {
