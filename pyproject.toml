@@ -23,6 +23,7 @@ dependencies = [
   'tqdm',
   'ml-collections',
   'pydantic',
+  'lazy_loader',
 ]
 
 [project.optional-dependencies]
