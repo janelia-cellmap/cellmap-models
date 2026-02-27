@@ -38,8 +38,8 @@ def export_dacapo_model(run_name: str, iteration: int):
         inference_output_shape=infernece_output_shape,
         input_shape=run.model.input_shape,
         output_shape=run.model.output_shape,
-        input_voxel_size=input_scale,
-        output_voxel_size=output_scale,
+        input_voxel_size=list(input_scale),
+        output_voxel_size=list(output_scale),
     )
     input_shape = (1, run.model.num_in_channels, *inference_input_shape)
 

@@ -194,7 +194,7 @@ iteration: {metadata.iteration}
 
 def export_metadata(metadata: ModelMetadata, overwrite: bool = False):
     export_folder = get_export_folder()
-    result_folder = os.path.join(export_folder, metadata.model_name)
+    result_folder = os.path.join(export_folder, metadata.model_name or "unnamed")
     if os.path.exists(result_folder) and not overwrite:
         answer = input(f"Folder {result_folder} already exists. Overwrite? [y/N]: ")
         if answer.lower() not in ("y", "yes"):

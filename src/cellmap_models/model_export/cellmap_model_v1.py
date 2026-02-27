@@ -1,6 +1,6 @@
 import os
 import json
-from typing import List, Dict, Optional
+from typing import Any, Optional
 from pydantic import BaseModel, Field
 from .generate_metadata import ModelMetadata, CURRENT_FORMAT_VERSION
 
@@ -8,12 +8,12 @@ from .generate_metadata import ModelMetadata, CURRENT_FORMAT_VERSION
 try:
     import onnxruntime as ort
 except ImportError:
-    ort = None  # If onnxruntime isn't installed, set it to None
+    ort: Any = None  # If onnxruntime isn't installed, set it to None
 
 try:
     import torch
 except ImportError:
-    torch = None  # If torch isn't installed, set it to None
+    torch: Any = None  # If torch isn't installed, set it to None
 
 
 class CellmapModel:
