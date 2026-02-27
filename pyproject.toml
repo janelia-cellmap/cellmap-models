@@ -21,7 +21,6 @@ dependencies = [
   'torchvision',
   'numpy',
   'tqdm',
-  'cellpose',
   'ml-collections',
   'pydantic',
 ]
@@ -36,10 +35,12 @@ dev = [
   'pdoc',
   'pre-commit',
 ]
+cellpose = ['cellpose']
 pretrained = ['cellpose[gui]']
 dacapo = ["dacapo-ml", "funlib.geometry"]
 export = ["onnxruntime"]
-all = ["cellmap-models[dev,pretrained,dacapo,export]"]
+huggingface = ["huggingface-hub"]
+all = ["cellmap-models[dev,cellpose,pretrained,dacapo,export,huggingface]"]
 
 [project.urls]
 homepage = "https://janelia-cellmap.github.io/cellmap-models"
