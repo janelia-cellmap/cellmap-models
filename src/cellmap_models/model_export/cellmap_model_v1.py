@@ -215,12 +215,21 @@ class CellmapModel:
             "model.pt2": ".pt2 (torch.export)",
             "model.onnx": ".onnx (ONNX)",
         }
-        found = [name for name in model_files if os.path.exists(os.path.join(self.folder_path, name))]
+        found = [
+            name
+            for name in model_files
+            if os.path.exists(os.path.join(self.folder_path, name))
+        ]
         if not found:
-            errors.append(f"No model files found (expected at least one of: {', '.join(model_files.keys())})")
+            errors.append(
+                f"No model files found (expected at least one of: {', '.join(model_files.keys())})"
+            )
 
         if errors:
-            raise ValueError(f"Invalid CellmapModel at {self.folder_path}:\n  - " + "\n  - ".join(errors))
+            raise ValueError(
+                f"Invalid CellmapModel at {self.folder_path}:\n  - "
+                + "\n  - ".join(errors)
+            )
 
         print(f"Valid CellmapModel: {self.folder_path}")
         print(f"  Model files: {', '.join(found)}")

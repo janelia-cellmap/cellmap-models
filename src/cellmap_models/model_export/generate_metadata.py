@@ -4,7 +4,6 @@ from pydantic import BaseModel, Field
 import os
 import cellmap_models.model_export.config as c
 
-
 CURRENT_FORMAT_VERSION = "1"
 
 
@@ -62,7 +61,9 @@ class ModelMetadata(BaseModel):
     author: Optional[str] = Field(None, description="Author of the model")
     description: Optional[str] = Field(None, description="Description of the model")
     version: Optional[str] = Field("1.0.0", description="Version of the model")
-    format_version: Optional[str] = Field(CURRENT_FORMAT_VERSION, description="CellmapModel format version")
+    format_version: Optional[str] = Field(
+        CURRENT_FORMAT_VERSION, description="CellmapModel format version"
+    )
 
 
 def _format_list(values):
@@ -73,7 +74,15 @@ def _format_list(values):
 
 def generate_huggingface_readme(metadata: ModelMetadata):
     """Generate a HuggingFace model card README with YAML frontmatter."""
-    tags = ["pytorch", "onnx", "torchscript", "3d", "segmentation", "electron-microscopy", "cellmap"]
+    tags = [
+        "pytorch",
+        "onnx",
+        "torchscript",
+        "3d",
+        "segmentation",
+        "electron-microscopy",
+        "cellmap",
+    ]
     if metadata.channels_names:
         tags.extend(metadata.channels_names)
 

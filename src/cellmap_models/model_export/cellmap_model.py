@@ -34,6 +34,7 @@ def CellmapModel(folder_path: str):
         raise ValueError(f"Unknown format version: {fmt}")
 
     import importlib
+
     module = importlib.import_module(f".{_VERSION_MODULES[fmt]}", package=__package__)
     return module.CellmapModel(folder_path)
 
