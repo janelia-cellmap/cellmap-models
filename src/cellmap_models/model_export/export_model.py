@@ -13,6 +13,7 @@ def export_torch_model(model, input_shape, folder_result, metadata=None):
 
     if metadata is not None:
         from .generate_metadata import export_metadata
+
         export_metadata(metadata)
     pt_file = os.path.join(folder_result, "model.pt")
     onnx_file = os.path.join(folder_result, "model.onnx")
@@ -72,8 +73,8 @@ def export_torch_model(model, input_shape, folder_result, metadata=None):
                     output_names=["output"],
                     save_as_external_data=True,
                     all_tensors_to_one_file=True,
-                    size_threshold=1024
-                    )
+                    size_threshold=1024,
+                )
                 print(f"Model saved to {onnx_file}")
             except Exception as e:
                 print(f"Error exporting to ONNX with external data: {e}")
@@ -84,7 +85,7 @@ def export_torch_model(model, input_shape, folder_result, metadata=None):
                     model_quantized = tq.quantize_dynamic(
                         model,
                         {torch.nn.Linear, torch.nn.LSTM, torch.nn.GRU},
-                        dtype=torch.qint8
+                        dtype=torch.qint8,
                     )
                     torch.onnx.export(
                         model_quantized,
@@ -97,7 +98,7 @@ def export_torch_model(model, input_shape, folder_result, metadata=None):
                         output_names=["output"],
                         save_as_external_data=True,
                         all_tensors_to_one_file=True,
-                        size_threshold=1024
+                        size_threshold=1024,
                     )
                     print(f"Model saved to {onnx_file}")
                 except Exception as e:

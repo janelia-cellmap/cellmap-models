@@ -21,7 +21,7 @@ def export_dacapo_model(run_name: str, iteration: int):
         weights = weights_store.retrieve_weights(run_name, iteration)
         run.model.load_state_dict(weights.model)
 
-    input_scale = Coordinate(8,8,8)
+    input_scale = Coordinate(8, 8, 8)
     output_scale = run.model.scale(input_scale)
 
     inference_input_shape = run.model.eval_input_shape
@@ -44,4 +44,6 @@ def export_dacapo_model(run_name: str, iteration: int):
     input_shape = (1, run.model.num_in_channels, *inference_input_shape)
 
     export_metadata(metadata)
-    export_torch_model(run.model, input_shape, os.path.join(get_export_folder(), run_name))
+    export_torch_model(
+        run.model, input_shape, os.path.join(get_export_folder(), run_name)
+    )

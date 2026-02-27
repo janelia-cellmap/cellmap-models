@@ -156,7 +156,9 @@ class CellmapModel:
                 print(f"Loaded trainable model via torch.export + unflatten")
                 return model
             except Exception as e:
-                print(f"Failed to unflatten torch.export model: {e}, falling back to TorchScript")
+                print(
+                    f"Failed to unflatten torch.export model: {e}, falling back to TorchScript"
+                )
 
         # Fall back to TorchScript
         if self.ts_model is not None:
