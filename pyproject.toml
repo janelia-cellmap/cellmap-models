@@ -6,7 +6,7 @@ requires = ["setuptools", "wheel"]
 name = "cellmap-models"
 description = "Repository of model architectures and network weights used for CellMap segmentations."
 readme = "README.md"
-requires-python = ">=3.7"
+requires-python = ">=3.10"
 classifiers = [
   "Programming Language :: Python :: 3",
 ]
@@ -15,14 +15,15 @@ license = { text = "BSD 3-Clause License" }
 authors = [
     { email = "rhoadesj@hhmi.org", name = "Jeff Rhoades" },
 ]
-version = "0.1.3"
+version = "0.2.3"
 dependencies = [
   'torch',
   'torchvision',
   'numpy',
   'tqdm',
-  'cellpose',
   'ml-collections',
+  'pydantic',
+  'lazy_loader',
 ]
 
 [project.optional-dependencies]
@@ -35,8 +36,12 @@ dev = [
   'pdoc',
   'pre-commit',
 ]
+cellpose = ['cellpose']
 pretrained = ['cellpose[gui]']
-all = ["cellmap-models[dev,pretrained]"]
+dacapo = ["dacapo-ml", "funlib.geometry"]
+export = ["onnxruntime"]
+huggingface = ["huggingface-hub"]
+all = ["cellmap-models[dev,cellpose,pretrained,dacapo,export,huggingface]"]
 
 [project.urls]
 homepage = "https://janelia-cellmap.github.io/cellmap-models"
@@ -48,3 +53,4 @@ ignore_missing_imports = true
 
 [project.scripts]
 "cellmap.add_cellpose" = "cellmap_models.pytorch.cellpose:add_model"
+"cellmap-export-dacapo" = "cellmap_models.model_export.dacapo_model:cli_export_dacapo_model"
