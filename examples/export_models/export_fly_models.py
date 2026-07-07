@@ -6,10 +6,11 @@ from cellmap_models.model_export.generate_metadata import ModelMetadata, export_
 from cellmap_models.model_export.export_model import export_torch_model
 import cellmap_models.model_export.config as c
 import os
-c.EXPORT_FOLDER = os.environ["CELLMAP_EXPORT_FOLDER"]  # e.g. export CELLMAP_EXPORT_FOLDER=/path/to/export
+c.EXPORT_FOLDER = "/nrs/cellmap/models/saalfeldlab_v2"  # e.g. export CELLMAP_EXPORT_FOLDER=/path/to/export
+os.makedirs(c.EXPORT_FOLDER, exist_ok=True)
 os.chdir(c.EXPORT_FOLDER)
 
-checkpoints_dir = os.environ["CELLMAP_CHECKPOINTS_DIR"]  # e.g. export CELLMAP_CHECKPOINTS_DIR=/path/to/checkpoints
+checkpoints_dir = "/nrs/saalfeld/heinrichl/fly_organelles"
 #%%
 models = {"run07":{700000:os.path.join(checkpoints_dir, "run07/model_checkpoint_700000"),
                    432000:os.path.join(checkpoints_dir, "run07/model_checkpoint_432000")},
@@ -84,3 +85,19 @@ for run_name, iterations in models.items():
         export_metadata(metadata)
         export_torch_model(model, input_shape, os.path.join(get_export_folder(), name))
 
+
+# %%
+models = [os.path.join(c.EXPORT_FOLDER, d) for d in os.listdir(c.EXPORT_FOLDER) if os.path.isdir(os.path.join(c.EXPORT_FOLDER, d))]
+models
+#%%
+from cellmap_models.model_export import push_to_huggingface
+import os
+
+org = "cellmap"
+for model_path in models:
+    folder_path = model_path
+    model_name = os.path.basename(folder_path)
+    repo_id = f"{org}/{model_name}"
+    print(f"Pushing {folder_path} -> {repo_id}")
+    push_to_huggingface(folder_path, repo_id)
+# %%
