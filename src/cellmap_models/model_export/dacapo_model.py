@@ -6,10 +6,33 @@ import os
 def cli_export_dacapo_model():
     run_name = input("Enter the run name: ")
     iteration = int(input("Enter the iteration number: "))
-    export_dacapo_model(run_name, iteration)
+    input_normalization = {"method": "min_max", "min": -1.0, "max": 1.0}
+    activation_name = (
+        input("Inference output activation [sigmoid]: ").strip() or "sigmoid"
+    )
+    inference_output_activation = {
+        "name": activation_name,
+        "apply_after_model": True,
+    }
+    export_dacapo_model(
+        run_name,
+        iteration,
+        input_normalization=input_normalization,
+        inference_output_activation=inference_output_activation,
+    )
 
 
-def export_dacapo_model(run_name: str, iteration: int):
+def export_dacapo_model(
+    run_name: str,
+    iteration: int,
+    input_normalization=None,
+    inference_output_activation=None,
+):
+    if input_normalization is None:
+        input_normalization = {"method": "min_max", "min": -1.0, "max": 1.0}
+    if inference_output_activation is None:
+        inference_output_activation = {"name": "sigmoid", "apply_after_model": True}
+
     from dacapo.experiments.run import Run
     from dacapo.store.create_store import create_config_store, create_weights_store
     from funlib.geometry import Coordinate
@@ -40,6 +63,8 @@ def export_dacapo_model(run_name: str, iteration: int):
         output_shape=run.model.output_shape,
         input_voxel_size=list(input_scale),
         output_voxel_size=list(output_scale),
+        input_normalization=input_normalization,
+        inference_output_activation=inference_output_activation,
     )
     input_shape = (1, run.model.num_in_channels, *inference_input_shape)
 

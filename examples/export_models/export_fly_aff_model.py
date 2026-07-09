@@ -51,6 +51,8 @@ metadata = ModelMetadata(
     inference_output_shape=[256, 256, 256],
     input_voxel_size=[16, 16, 16],
     output_voxel_size=[16, 16, 16],
+    input_normalization={"method": "min_max", "min": -1.0, "max": 1.0},
+    inference_output_activation={"name": "sigmoid", "apply_after_model": True},
     author="Marwan Zouinkhi",
     description="C-elegans worms affinities for mitochondria segmentation using a UNet architecture trained on setup 19 with 370k iterations.",
 )

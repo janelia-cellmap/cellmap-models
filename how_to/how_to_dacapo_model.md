@@ -35,13 +35,36 @@ c.EXPORT_FOLDER = os.environ["CELLMAP_EXPORT_FOLDER"]
 run_name = "v22_peroxisome_funetuning_best_v20_1e4_finetuned_distances_8nm_peroxisome_jrc_mus-livers_peroxisome_8nm_attention-upsample-unet_default_one_label_finetuning_0"
 iteration = 45000
 
-export_dacapo_model(run_name, iteration)
+export_dacapo_model(
+    run_name,
+    iteration,
+    input_normalization={"method": "min_max", "min": -1.0, "max": 1.0},
+    inference_output_activation={"name": "sigmoid", "apply_after_model": True},
+)
 
 folder_path = os.path.join(c.EXPORT_FOLDER, run_name)
-CellmapModel(folder_path)
+cellmap_model = CellmapModel(folder_path)
 ```
 
 The current DaCapo helper may prompt for metadata fields that are not filled automatically, such as author, description, or spatial dimensions. Run it in an interactive shell, or adapt the helper for a fully non-interactive batch export.
+
+`input_normalization` records the input preprocessing contract. `inference_output_activation` records output postprocessing; use `{"name": "sigmoid", "apply_after_model": True}` when the exported DaCapo model does not include a sigmoid layer.
+
+Parse the formal metadata during inference:
+
+```python
+from cellmap_models.model_export import parse_activation_to_torch, parse_normalization_min_max
+
+input_min, input_max = parse_normalization_min_max(
+    cellmap_model.metadata.input_normalization
+)
+activation = parse_activation_to_torch(
+    cellmap_model.metadata.inference_output_activation
+)
+
+# activation is torch.sigmoid when apply_after_model=True, otherwise torch.nn.Identity().
+output = activation(raw_model_output)
+```
 
 You can also use the installed prompt-based CLI:
 
@@ -122,7 +145,12 @@ models = {
 }
 
 for run_name, iteration in models.items():
-    export_dacapo_model(run_name, iteration)
+    export_dacapo_model(
+        run_name,
+        iteration,
+        input_normalization={"method": "min_max", "min": -1.0, "max": 1.0},
+        inference_output_activation={"name": "sigmoid", "apply_after_model": True},
+    )
     folder_path = os.path.join(c.EXPORT_FOLDER, run_name)
     CellmapModel(folder_path)
     push_to_huggingface(folder_path, repo_id=f"cellmap/{run_name}")

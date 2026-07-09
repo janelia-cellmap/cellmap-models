@@ -73,17 +73,19 @@ for run_name, iterations in models.items():
             channels_names=classes_names,
             inference_input_shape=inference_input_shape,
             inference_output_shape=infernece_output_shape,
-            input_shape=input_shape,
-            output_shape=output_shape,
+            input_shape=[1, 1, *input_shape],
+            output_shape=[1, output_channels, *output_shape],
             input_voxel_size=input_voxel_size,
             output_voxel_size=output_voxel_size,
+            input_normalization={"method": "min_max", "min": -1.0, "max": 1.0},
+            inference_output_activation={"name": "sigmoid", "apply_after_model": False},
             author=author,
             description=description,
         )
-        input_shape = (1, 1, *inference_input_shape)
+        export_input_shape = (1, 1, *inference_input_shape)
 
         export_metadata(metadata)
-        export_torch_model(model, input_shape, os.path.join(get_export_folder(), name))
+        export_torch_model(model, export_input_shape, os.path.join(get_export_folder(), name))
 
 
 # %%

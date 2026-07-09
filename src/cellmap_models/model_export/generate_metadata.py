@@ -1,10 +1,109 @@
 import json
-from typing import List, Optional, get_origin, get_args
-from pydantic import BaseModel, Field
+from typing import Any, Callable, List, Optional, get_origin, get_args
+from pydantic import BaseModel, Field, field_validator
 import os
 import cellmap_models.model_export.config as c
 
 CURRENT_FORMAT_VERSION = "1"
+
+
+class InputNormalization(BaseModel):
+    method: str = Field(
+        "none",
+        description="Input normalization method. Use min_max for fixed-range inputs.",
+    )
+    min: Optional[float] = Field(None, description="Minimum value after normalization.")
+    max: Optional[float] = Field(None, description="Maximum value after normalization.")
+
+
+class InferenceOutputActivation(BaseModel):
+    name: str = Field(
+        "identity",
+        description="Activation name, e.g., sigmoid, softmax, identity, or none.",
+    )
+    apply_after_model: bool = Field(
+        False,
+        description="Whether inference code should apply this activation after model output.",
+    )
+    dim: Optional[int] = Field(
+        None, description="Dimension for activations such as softmax."
+    )
+
+
+def _normalization_from_value(value: Any) -> InputNormalization:
+    if isinstance(value, InputNormalization):
+        return value
+    if value is None:
+        return InputNormalization()
+    if isinstance(value, dict):
+        return InputNormalization(**value)
+    if isinstance(value, str):
+        normalized = value.strip().lower().replace(" ", "")
+        if normalized in ("", "none", "identity", "unspecified"):
+            return InputNormalization()
+        if "[-1,1]" in normalized or "-1,1" in normalized:
+            return InputNormalization(method="min_max", min=-1.0, max=1.0)
+        raise ValueError(
+            "input_normalization strings must be 'none', 'unspecified', or contain [-1, 1]; "
+            "prefer a dict such as {'method': 'min_max', 'min': -1.0, 'max': 1.0}"
+        )
+    raise TypeError(f"Unsupported input_normalization value: {value!r}")
+
+
+def _activation_from_value(value: Any) -> InferenceOutputActivation:
+    if isinstance(value, InferenceOutputActivation):
+        return value
+    if value is None:
+        return InferenceOutputActivation()
+    if isinstance(value, dict):
+        return InferenceOutputActivation(**value)
+    if isinstance(value, str):
+        normalized = value.strip().lower()
+        if normalized in ("", "none", "identity", "unspecified"):
+            return InferenceOutputActivation()
+        if "sigmoid" in normalized:
+            apply_after_model = not any(
+                phrase in normalized
+                for phrase in ("included", "in exported model", "in model")
+            )
+            return InferenceOutputActivation(
+                name="sigmoid", apply_after_model=apply_after_model
+            )
+        raise ValueError(
+            "inference_output_activation strings must be 'none', 'unspecified', or mention sigmoid; "
+            "prefer a dict such as {'name': 'sigmoid', 'apply_after_model': True}"
+        )
+    raise TypeError(f"Unsupported inference_output_activation value: {value!r}")
+
+
+def parse_normalization_min_max(normalization: Any) -> tuple[float, float]:
+    """Parse normalization metadata into a numeric (min, max) pair."""
+    spec = _normalization_from_value(normalization)
+    if spec.method != "min_max" or spec.min is None or spec.max is None:
+        raise ValueError(
+            f"Normalization does not define a min_max range: {spec.model_dump()}"
+        )
+    return spec.min, spec.max
+
+
+def parse_activation_to_torch(activation: Any) -> Callable:
+    """Parse activation metadata into a torch callable.
+
+    Returns torch.nn.Identity() when the activation is already included in the
+    exported model or when no post-model activation is requested.
+    """
+    import torch
+
+    spec = _activation_from_value(activation)
+    name = spec.name.lower()
+    if not spec.apply_after_model or name in ("identity", "none"):
+        return torch.nn.Identity()
+    if name == "sigmoid":
+        return torch.sigmoid
+    if name == "softmax":
+        dim = 1 if spec.dim is None else spec.dim
+        return lambda tensor: torch.softmax(tensor, dim=dim)
+    raise ValueError(f"Unsupported output activation: {spec.name}")
 
 
 def get_export_folder():
@@ -58,6 +157,25 @@ class ModelMetadata(BaseModel):
         None,
         description="Inference output shape as comma-separated values, e.g., 1,2,96,96,96",
     )
+    input_normalization: InputNormalization = Field(
+        default_factory=InputNormalization,
+        description="Input normalization expected before inference.",
+    )
+    inference_output_activation: InferenceOutputActivation = Field(
+        default_factory=InferenceOutputActivation,
+        description="Output activation expected during inference.",
+    )
+
+    @field_validator("input_normalization", mode="before")
+    @classmethod
+    def _validate_input_normalization(cls, value):
+        return _normalization_from_value(value)
+
+    @field_validator("inference_output_activation", mode="before")
+    @classmethod
+    def _validate_inference_output_activation(cls, value):
+        return _activation_from_value(value)
+
     author: Optional[str] = Field(None, description="Author of the model")
     description: Optional[str] = Field(None, description="Description of the model")
     version: Optional[str] = Field("1.0.0", description="Version of the model")
@@ -70,6 +188,16 @@ def _format_list(values):
     if values is None:
         return "N/A"
     return ", ".join(str(v) for v in values)
+
+
+def _format_metadata_value(value):
+    if value is None:
+        return "N/A"
+    if isinstance(value, BaseModel):
+        return json.dumps(value.model_dump(exclude_none=True), sort_keys=True)
+    if isinstance(value, dict):
+        return json.dumps(value, sort_keys=True)
+    return str(value)
 
 
 def generate_huggingface_readme(metadata: ModelMetadata):
@@ -112,6 +240,8 @@ license: bsd-3-clause
 | **Output Voxel Size** | {_format_list(metadata.output_voxel_size)} nm |
 | **Inference Input Shape** | {_format_list(metadata.inference_input_shape)} |
 | **Inference Output Shape** | {_format_list(metadata.inference_output_shape)} |
+| **Input Normalization** | {_format_metadata_value(metadata.input_normalization)} |
+| **Inference Output Activation** | {_format_metadata_value(metadata.inference_output_activation)} |
 
 ## Available Formats
 
@@ -182,6 +312,8 @@ iteration: {metadata.iteration}
 - **Inference Output Shape:** {_format_list(metadata.inference_output_shape)}
 - **Input Voxel Size:** {_format_list(metadata.input_voxel_size)}
 - **Output Voxel Size:** {_format_list(metadata.output_voxel_size)}
+- **Input Normalization:** {_format_metadata_value(metadata.input_normalization)}
+- **Inference Output Activation:** {_format_metadata_value(metadata.inference_output_activation)}
 
 ## Author
 {metadata.author or "N/A"}

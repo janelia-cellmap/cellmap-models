@@ -75,12 +75,14 @@ metadata = ModelMetadata(
     in_channels=1,
     out_channels=channels,
     channels_names=channel_names,
-    input_shape=[178, 178, 178],
-    output_shape=[56, 56, 56],
+    input_shape=[1, 1, 178, 178, 178],
+    output_shape=[1, channels, 56, 56, 56],
     inference_input_shape=[378, 378, 378],
     inference_output_shape=[256, 256, 256],
     input_voxel_size=[8, 8, 8],
     output_voxel_size=[8, 8, 8],
+    input_normalization={"method": "min_max", "min": -1.0, "max": 1.0},
+    inference_output_activation={"name": "sigmoid", "apply_after_model": False},
     author="Author Name",
     description=f"Fly organelles segmentation model, iteration {iteration}.",
     version="1.0.0",
@@ -92,14 +94,31 @@ folder_path = os.path.join(get_export_folder(), model_name)
 # Passing metadata directly into export_torch_model can trigger an overwrite prompt
 # because export_torch_model creates the target folder before export_metadata runs.
 export_metadata(metadata)
-export_input_shape = [1, 1, *metadata.input_shape]
-export_torch_model(model, tuple(export_input_shape), folder_path)
+export_torch_model(model, tuple(metadata.input_shape), folder_path)
 
 # Validate the exported folder before publishing.
-CellmapModel(folder_path)
+cellmap_model = CellmapModel(folder_path)
 ```
 
 The exporter attempts multiple formats. If ONNX export fails in the local environment, the folder can still be valid as long as `metadata.json` and at least one of `model.pt`, `model.pt2`, `model.ts`, or `model.onnx` exists.
+
+`input_normalization` and `inference_output_activation` tell downstream inference code how to prepare data and outputs. If you export a raw model without `torch.nn.Sigmoid()`, set `inference_output_activation={"name": "sigmoid", "apply_after_model": True}` instead.
+
+Parse the formal metadata during inference:
+
+```python
+from cellmap_models.model_export import parse_activation_to_torch, parse_normalization_min_max
+
+input_min, input_max = parse_normalization_min_max(
+    cellmap_model.metadata.input_normalization
+)
+activation = parse_activation_to_torch(
+    cellmap_model.metadata.inference_output_activation
+)
+
+# activation is torch.sigmoid when apply_after_model=True, otherwise torch.nn.Identity().
+output = activation(raw_model_output)
+```
 
 ## Publish to Hugging Face
 

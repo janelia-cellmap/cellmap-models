@@ -100,6 +100,8 @@ metadata = ModelMetadata(
     inference_output_shape=[96, 96, 96],
     input_voxel_size=[8, 8, 8],
     output_voxel_size=[8, 8, 8],
+    input_normalization={"method": "min_max", "min": -1.0, "max": 1.0},
+    inference_output_activation={"name": "sigmoid", "apply_after_model": True},
     author="Your Name",
     description="My segmentation model",
 )
@@ -121,6 +123,15 @@ onnx_session = model.onnx_model        # ONNX Runtime session
 ts_model = model.ts_model              # TorchScript model
 pt_model = model.pytorch_model         # PyTorch pickle model
 exported = model.exported_model         # torch.export ExportedProgram
+```
+
+Pre/post-processing metadata can be parsed programmatically:
+
+```python
+from cellmap_models.model_export import parse_activation_to_torch, parse_normalization_min_max
+
+input_min, input_max = parse_normalization_min_max(model.metadata.input_normalization)
+activation = parse_activation_to_torch(model.metadata.inference_output_activation)
 ```
 
 ### Load an exported model for finetuning
