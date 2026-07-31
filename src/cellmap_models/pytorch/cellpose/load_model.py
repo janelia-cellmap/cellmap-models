@@ -2,8 +2,6 @@ import os
 from pathlib import Path
 from typing import Union
 import torch
-from .get_model import get_model
-from cellpose.models import CellposeModel
 
 
 def load_model(
@@ -21,6 +19,10 @@ def load_model(
     Returns:
         model: model
     """
+    from cellpose.models import CellposeModel
+
+    from .get_model import get_model
+
     model_path = get_model(model_name, base_path)
     if device == "cuda" and not torch.cuda.is_available():
         device = "cpu"

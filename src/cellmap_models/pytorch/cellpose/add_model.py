@@ -1,9 +1,6 @@
 import os
 import sys
 from typing import Optional
-from cellpose.io import add_model as _add_model
-from cellpose.models import MODEL_DIR
-from .get_model import get_model
 
 
 def add_model(model_name: Optional[str] = None):
@@ -12,6 +9,11 @@ def add_model(model_name: Optional[str] = None):
     Args:
         model_name (str): model name
     """
+    from cellpose.io import add_model as _add_model
+    from cellpose.models import MODEL_DIR
+
+    from .get_model import get_model
+
     if model_name is None:
         model_name = sys.argv[1]
     base_path = MODEL_DIR

@@ -1,7 +1,17 @@
-from .add_model import add_model
-from .load_model import load_model
-from .get_model import get_model
-from .download_checkpoint import download_checkpoint
+import lazy_loader as lazy
+
+
+# Keep Cellpose itself out of the import path until one of these helpers is
+# actually used. Cellpose is an optional dependency of cellmap-models.
+__getattr__, __dir__, __all__ = lazy.attach(
+    __name__,
+    submod_attrs={
+        "add_model": ["add_model"],
+        "load_model": ["load_model"],
+        "get_model": ["get_model"],
+        "download_checkpoint": ["download_checkpoint"],
+    },
+)
 
 models_dict = {
     "jrc_fly-mb-z0419-20_nuc_cp": "https://github.com/janelia-cellmap/cellmap-models/releases/download/2024.08.06/jrc_fly-mb-z0419-20_nuc_cp",
