@@ -1,0 +1,43 @@
+# How to Initialize a Small Model by Pruning a Big One
+
+`cellmap_models.model_export.prune.prune_funlib_unet` builds the weights of a smaller U-Net (fewer channels
+per level) from a trained big one by **structured L1 channel selection**. It is an initialization for
+fine-tuning, much better than random init — not a compression that works without retraining.
+
+Works for any model wrapping one `funlib.learn.torch.models.UNet` (one head) followed by a final conv,
+e.g. `fly_organelles.model.StandardUnet`.
+
+## Usage
+
+```python
+import torch
+from fly_organelles.model import StandardUnet
+from cellmap_models.model_export import prune_funlib_unet
+
+teacher = StandardUnet(13, num_fmaps=16, fmap_inc_factor=6)          # 792M params, affinities + LSD
+teacher.load_state_dict(torch.load(ckpt, map_location="cpu")["model_state_dict"])
+
+student = StandardUnet(3, num_fmaps=12, fmap_inc_factor=3)            # 9.2M params, affinities only
+sd = prune_funlib_unet(teacher.state_dict(), student.state_dict())   # final conv keeps channels [0:3]
+student.load_state_dict(sd)
+torch.save({"model_state_dict": sd}, "pretrained_init_checkpoint")   # then fine-tune from it
+```
+
+The student's shapes define how many channels are kept; only shapes of `student.state_dict()` are used.
+Options: `prefix` (key prefix of the UNet, `"unet_backbone."` for StandardUnet, `""` for a bare UNet),
+`final_key` (final conv module name, `None` if absent), `final_out_idx` (which teacher output channels the
+student predicts; default the first `C_out`).
+
+## What it does
+
+* **Encoder** `l_conv[level]`: keep the output channels with the largest L1 weight norm of the level's last
+  conv; the first conv takes the kept channels of the level above (all input channels at level 0), the
+  next convs map the kept set onto itself.
+* **Decoder** `r_conv[level]`: same selection; its input is `cat([skip, upsampled])` (skip first, as in
+  funlib's `Upsample.forward`), i.e. the kept encoder channels of the level plus the kept channels of the
+  bottleneck (deepest decoder level) or of `r_conv[level+1]`, offset by the teacher's skip width.
+  Transposed-conv upsampling weights (`constant_upsample=False`) are sliced on the upsampled channels.
+* **Final conv**: keeps `final_out_idx` outputs and the kept channels of `r_conv[0]`.
+
+Keys and shapes are checked against the student. Pruning a model to its own widths returns the identical
+function (tested).

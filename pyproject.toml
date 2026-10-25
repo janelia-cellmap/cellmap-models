@@ -39,7 +39,7 @@ dev = [
 cellpose = ['cellpose']
 pretrained = ['cellpose[gui]']
 dacapo = ["dacapo-ml", "funlib.geometry"]
-export = ["onnxruntime"]
+export = ["onnx", "onnxruntime"]
 huggingface = ["huggingface-hub"]
 all = ["cellmap-models[dev,cellpose,pretrained,dacapo,export,huggingface]"]
 

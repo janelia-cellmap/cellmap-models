@@ -145,6 +145,31 @@ model = cellmap_model.train()
 # Tries torch.export (model.pt2) + unflatten first, falls back to TorchScript
 ```
 
+### Export for the browser (onnxruntime-web / WebGPU)
+
+```python
+from cellmap_models.model_export import export_onnx_web
+
+export_onnx_web(model, "export/onnx_web/my_model", "my_model", input_sizes=[148, 132], validation_input=x)
+```
+
+Writes fp32 / fp16 / int8w / int8w_fp16 ONNX files per block size, with two exact rewrites for
+onnxruntime-web: ConvTranspose3d (k=s=2) → 1×1×1 conv + depth-to-space, and every Conv3d → a sum of Conv2d
+over a depth-folded batch (~17× faster on WebGPU, whose Conv3d kernel is naive; `native_conv3d=True` keeps
+Conv3d for CPU/CUDA runtimes, where the rewrite is slower). Each file is validated against PyTorch with
+onnxruntime. See [how_to/how_to_onnx_web.md](how_to/how_to_onnx_web.md).
+
+### Initialize a small model by pruning a big one
+
+```python
+from cellmap_models.model_export import prune_funlib_unet
+
+student.load_state_dict(prune_funlib_unet(teacher.state_dict(), student.state_dict()))
+```
+
+Structured L1 channel selection for funlib U-Nets (e.g. fly_organelles `StandardUnet`), as a fine-tuning
+initialization. See [how_to/how_to_prune.md](how_to/how_to_prune.md).
+
 ### Push an exported model to Hugging Face Hub
 
 ```python
