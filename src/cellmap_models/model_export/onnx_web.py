@@ -28,7 +28,7 @@ import copy
 import json
 import os
 import time
-from typing import Dict, List, Optional, Sequence
+from typing import Dict, List, Optional, Sequence, Union
 
 import numpy as np
 import torch
@@ -38,28 +38,30 @@ OPSET = 18
 
 
 class ConvTranspose3dAsConv(torch.nn.Module):
-    """Exact replacement for ConvTranspose3d with kernel == stride == 2 (no overlap): a 1x1x1 Conv to
-    Cout*8 channels followed by a 3D depth-to-space done as three rank-6 reshape/transpose steps.
-    onnxruntime-web's WebGPU EP only implements 1D/2D ConvTranspose."""
+    """Exact replacement for ConvTranspose3d with kernel == stride (no overlap; e.g. 2x2x2, or 1x2x2
+    in a 2D U-Net): a 1x1x1 Conv to Cout*kz*ky*kx channels followed by a 3D depth-to-space done as
+    three rank-6 reshape/transpose steps. onnxruntime-web's WebGPU EP only implements 1D/2D
+    ConvTranspose."""
 
     def __init__(self, ct: torch.nn.ConvTranspose3d):
         super().__init__()
         assert (
-            tuple(ct.kernel_size) == (2, 2, 2)
-            and tuple(ct.stride) == (2, 2, 2)
+            tuple(ct.kernel_size) == tuple(ct.stride)
             and tuple(ct.padding) == (0, 0, 0)
             and tuple(ct.output_padding) == (0, 0, 0)
             and tuple(ct.dilation) == (1, 1, 1)
             and ct.groups == 1
-        ), "only ConvTranspose3d(kernel=2, stride=2, padding=0, groups=1) is supported"
+        ), "only ConvTranspose3d(kernel=stride, padding=0, groups=1) is supported"
         cin, cout = ct.in_channels, ct.out_channels
         self.cout = cout
-        self.conv = torch.nn.Conv3d(cin, cout * 8, 1, device=ct.weight.device)
+        self.factors = tuple(int(k) for k in ct.kernel_size)
+        taps = self.factors[0] * self.factors[1] * self.factors[2]
+        self.conv = torch.nn.Conv3d(cin, cout * taps, 1, device=ct.weight.device)
         # ConvTranspose weight is (Cin, Cout, a, b, c); new conv output channel order is (co, a, b, c).
-        w = ct.weight.detach().permute(1, 2, 3, 4, 0).reshape(cout * 8, cin, 1, 1, 1)
+        w = ct.weight.detach().permute(1, 2, 3, 4, 0).reshape(cout * taps, cin, 1, 1, 1)
         self.conv.weight.data.copy_(w)
         if ct.bias is not None:
-            self.conv.bias.data.copy_(ct.bias.detach().repeat_interleave(8))
+            self.conv.bias.data.copy_(ct.bias.detach().repeat_interleave(taps))
         else:
             self.conv.bias.data.zero_()
 
@@ -67,20 +69,21 @@ class ConvTranspose3dAsConv(torch.nn.Module):
         y = self.conv(x)
         n, _, d, h, w = y.shape
         co = self.cout
+        fz, fy, fx = self.factors
         y = (
-            y.reshape(n, co * 4, 2, d, h, w)
+            y.reshape(n, co * fz * fy, fx, d, h, w)
             .permute(0, 1, 3, 4, 5, 2)
-            .reshape(n, co * 4, d, h, 2 * w)
+            .reshape(n, co * fz * fy, d, h, fx * w)
         )
         y = (
-            y.reshape(n, co * 2, 2, d, h, 2 * w)
+            y.reshape(n, co * fz, fy, d, h, fx * w)
             .permute(0, 1, 3, 4, 2, 5)
-            .reshape(n, co * 2, d, 2 * h, 2 * w)
+            .reshape(n, co * fz, d, fy * h, fx * w)
         )
         y = (
-            y.reshape(n, co, 2, d, 2 * h, 2 * w)
+            y.reshape(n, co, fz, d, fy * h, fx * w)
             .permute(0, 1, 3, 2, 4, 5)
-            .reshape(n, co, 2 * d, 2 * h, 2 * w)
+            .reshape(n, co, fz * d, fy * h, fx * w)
         )
         return y
 
@@ -272,11 +275,36 @@ def compare_onnx(onnx_path: str, x: np.ndarray, ref: np.ndarray) -> Dict:
     return dict(**output_difference(out, ref), ort_cpu_s=round(dt, 3))
 
 
+def _cpu_copy(model: torch.nn.Module) -> torch.nn.Module:
+    """``model`` (on any device) copied to the CPU, its tensors copied straight there rather than
+    first beside themselves on their device."""
+    memo = {
+        id(t): (
+            torch.nn.Parameter(t.detach().cpu(), t.requires_grad)
+            if isinstance(t, torch.nn.Parameter)
+            else t.detach().cpu()
+        )
+        for t in [*model.parameters(), *model.buffers()]
+    }
+    return copy.deepcopy(model, memo)
+
+
+def _block_name(block: Sequence[int]) -> str:
+    """A block in a file name, as cellmap/onnx-web-models names them: ``in172`` for a cube,
+    ``2d_in556`` for a square slice, else ``in{z}x{y}x{x}``."""
+    z, y, x = block
+    if z == y == x:
+        return f"in{z}"
+    if z == 1 and y == x:
+        return f"2d_in{y}"
+    return f"in{z}x{y}x{x}"
+
+
 def export_onnx_web(
     model: torch.nn.Module,
     out_dir: str,
     name: str,
-    input_sizes: Sequence[int],
+    input_sizes: Sequence[Union[int, Sequence[int]]],
     in_channels: int = 1,
     variants: Sequence[str] = VARIANTS,
     native_conv3d: bool = False,
@@ -285,8 +313,9 @@ def export_onnx_web(
 ) -> List[Dict]:
     """Export a 3D model (input ``[1, C, z, y, x]``) to fixed-size ONNX files for onnxruntime-web.
 
-    For every cubic block size in ``input_sizes`` and every variant in ``variants`` writes
-    ``{out_dir}/{name}_in{size}[_conv3d]_{variant}.onnx`` and validates it against ``model`` with
+    For every block in ``input_sizes`` and every variant in ``variants`` writes
+    ``{out_dir}/{name}_in{size}[_conv3d]_{variant}.onnx`` (``{name}_2d_in{y}`` for a ``(1, y, y)``
+    slice, ``{name}_in{z}x{y}x{x}`` for another shape) and validates it against ``model`` with
     onnxruntime CPU. Writes ``{out_dir}/manifest.json`` (``manifest_conv3d.json`` with ``native_conv3d``)
     with one entry per file and returns the entries.
 
@@ -295,13 +324,15 @@ def export_onnx_web(
             modified).
         out_dir: output folder.
         name: file name stem, e.g. ``"setup_53_mito_affinities_16nm"``.
-        input_sizes: cubic input block sizes; each must be a valid input size of the model.
+        input_sizes: input blocks, each a cube's side or a ``(z, y, x)`` shape (``(1, y, x)`` for a
+            2D model, input ``[1, C, 1, y, x]``); each must be a valid input of the model. The
+            manifest says a cube's sizes as one number and any other block's as three.
         in_channels: number of input channels.
         variants: subset of ``VARIANTS``.
         native_conv3d: keep native Conv3d nodes (for CPU/CUDA runtimes) instead of the Conv2d rewrite;
             adds ``_conv3d`` to the file names.
-        validation_input: normalized input of shape ``[1, C, n, n, n]`` with ``n >= max(input_sizes)``
-            used for validation (centre crops are taken per size). Use real data: random noise makes
+        validation_input: normalized input ``[1, C, z, y, x]`` at least as large as every block
+            on every axis, used for validation (centre crops are taken per block). Use real data: random noise makes
             the decision-flip metric meaningless. Defaults to uniform noise in [-1, 1].
         manifest_extra: extra fields stored at the top level of ``manifest.json``.
     """
@@ -312,26 +343,32 @@ def export_onnx_web(
     model = model.eval()
     # the reference runs where the model is (a GPU's, say); the export is of a CPU copy
     device = next(model.parameters()).device
-    export_model = prepare_for_web(model, native_conv3d=native_conv3d).cpu()
+    export_model = prepare_for_web(_cpu_copy(model), native_conv3d=native_conv3d)
     os.makedirs(out_dir, exist_ok=True)
-    n_max = max(input_sizes)
+    blocks = [
+        (b,) * 3 if isinstance(b, int) else tuple(int(n) for n in b)
+        for b in input_sizes
+    ]
+    largest = tuple(max(b[i] for b in blocks) for i in range(3))
     if validation_input is None:
         rng = np.random.default_rng(0)
-        validation_input = rng.uniform(
-            -1, 1, (1, in_channels, n_max, n_max, n_max)
-        ).astype(np.float32)
-    assert validation_input.ndim == 5 and min(validation_input.shape[2:]) >= n_max
+        validation_input = rng.uniform(-1, 1, (1, in_channels, *largest)).astype(
+            np.float32
+        )
+    assert validation_input.ndim == 5 and all(
+        s >= n for s, n in zip(validation_input.shape[2:], largest)
+    )
 
     results = []
-    for size in input_sizes:
-        offs = [(s - size) // 2 for s in validation_input.shape[2:]]
+    for block in blocks:
+        offs = [(s - n) // 2 for s, n in zip(validation_input.shape[2:], block)]
         x = np.ascontiguousarray(
             validation_input[
                 :,
                 :,
-                offs[0] : offs[0] + size,
-                offs[1] : offs[1] + size,
-                offs[2] : offs[2] + size,
+                offs[0] : offs[0] + block[0],
+                offs[1] : offs[1] + block[1],
+                offs[2] : offs[2] + block[2],
             ],
             dtype=np.float32,
         )
@@ -343,9 +380,10 @@ def export_onnx_web(
             ),
         ):
             ref = model(torch.from_numpy(x).to(device)).cpu().numpy()
-        stem = f"{name}_in{size}" + ("_conv3d" if native_conv3d else "")
+        stem = f"{name}_{_block_name(block)}" + ("_conv3d" if native_conv3d else "")
         fp32_path = os.path.join(out_dir, f"{stem}_fp32.onnx")
-        export_fp32(export_model, (1, in_channels, size, size, size), fp32_path)
+        export_fp32(export_model, (1, in_channels, *block), fp32_path)
+        cube = len(set(block)) == 1
         for v in variants:
             path = os.path.join(out_dir, f"{stem}_{v}.onnx")
             if v == "fp16":
@@ -358,8 +396,10 @@ def export_onnx_web(
                 )
             r = dict(
                 variant=v,
-                input_size=size,
-                output_size=int(ref.shape[2]),
+                input_size=block[0] if cube else list(block),
+                output_size=(
+                    int(ref.shape[2]) if cube else [int(n) for n in ref.shape[2:]]
+                ),
                 file=os.path.basename(path),
                 file_mb=round(os.path.getsize(path) / 1e6, 2),
                 conv3d_as_2d=not native_conv3d,
