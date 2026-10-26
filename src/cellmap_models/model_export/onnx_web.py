@@ -245,6 +245,19 @@ def export_fp32(model: torch.nn.Module, input_shape: Sequence[int], path: str):
     return m
 
 
+def output_difference(out: np.ndarray, ref: np.ndarray, threshold: float = 0.0) -> Dict:
+    """How far ``out`` is from the reference output ``ref``: max/mean |diff|, the mean squared
+    diff, and the fraction of voxels whose ``> threshold`` decision flips (0 for logits, 0.5 for
+    probabilities)."""
+    diff = np.abs(out - ref)
+    return dict(
+        max_abs=float(diff.max()),
+        mean_abs=float(diff.mean()),
+        mse=float(np.mean(diff**2)),
+        flip_frac=float(np.mean((out > threshold) != (ref > threshold))),
+    )
+
+
 def compare_onnx(onnx_path: str, x: np.ndarray, ref: np.ndarray) -> Dict:
     """Run ``onnx_path`` with onnxruntime CPU on ``x`` and compare with the reference output ``ref``."""
     import onnxruntime as ort
@@ -256,12 +269,7 @@ def compare_onnx(onnx_path: str, x: np.ndarray, ref: np.ndarray) -> Dict:
     out = sess.run(None, {"input": x})[0].astype(np.float32)
     dt = time.time() - t0
     assert out.shape == ref.shape, (out.shape, ref.shape)
-    return dict(
-        max_abs=float(np.abs(out - ref).max()),
-        mean_abs=float(np.abs(out - ref).mean()),
-        flip_frac=float(np.mean((out > 0) != (ref > 0))),
-        ort_cpu_s=round(dt, 3),
-    )
+    return dict(**output_difference(out, ref), ort_cpu_s=round(dt, 3))
 
 
 def export_onnx_web(

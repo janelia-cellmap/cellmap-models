@@ -60,7 +60,7 @@ def prune_funlib_unet(
     teacher_sd: Dict[str, torch.Tensor],
     student_sd: Dict[str, torch.Tensor],
     prefix: str = "unet_backbone.",
-    final_key: str = "final_conv",
+    final_key: Optional[str] = "final_conv",
     final_out_idx: Optional[Sequence[int]] = None,
 ) -> Dict[str, torch.Tensor]:
     """Build a student state dict by L1 channel selection from a teacher state dict.
