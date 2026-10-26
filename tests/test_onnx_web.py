@@ -37,9 +37,10 @@ def test_conv3d_as_2d_exact(k, s):
         torch.testing.assert_close(Conv3dAs2d(conv)(x), conv(x), atol=1e-5, rtol=1e-5)
 
 
-def test_convtranspose3d_as_conv_exact():
+@pytest.mark.parametrize("k", [2, (1, 2, 2)])
+def test_convtranspose3d_as_conv_exact(k):
     torch.manual_seed(0)
-    ct = torch.nn.ConvTranspose3d(3, 4, 2, stride=2)
+    ct = torch.nn.ConvTranspose3d(3, 4, k, stride=k)
     x = torch.randn(1, 3, 5, 6, 7)
     with torch.no_grad():
         torch.testing.assert_close(
@@ -86,3 +87,32 @@ def test_export_onnx_web(tmp_path):
     )
     assert (tmp_path / "tiny_in18_conv3d_fp32.onnx").exists()
     assert (tmp_path / "manifest_conv3d.json").exists()
+
+
+class Tiny2D(torch.nn.Module):
+    """A 2D net on [1, C, 1, y, x] slices: depth-1 convs, a 1x2x2 pool and transposed conv."""
+
+    def __init__(self):
+        super().__init__()
+        self.c1 = torch.nn.Conv3d(1, 4, (1, 3, 3))
+        self.down = torch.nn.MaxPool3d((1, 2, 2))
+        self.up = torch.nn.ConvTranspose3d(4, 4, (1, 2, 2), stride=(1, 2, 2))
+        self.head = torch.nn.Conv3d(4, 2, 1)
+
+    def forward(self, x):
+        return self.head(self.up(self.down(torch.relu(self.c1(x)))))
+
+
+def test_export_onnx_web_2d(tmp_path):
+    pytest.importorskip("onnx")
+    pytest.importorskip("onnxruntime")
+    from cellmap_models.model_export.onnx_web import export_onnx_web
+
+    torch.manual_seed(0)
+    results = export_onnx_web(
+        Tiny2D(), str(tmp_path), "tiny", input_sizes=[(1, 22, 22)], variants=["fp32"]
+    )
+    (r,) = results
+    assert r["file"] == "tiny_2d_in22_fp32.onnx" and (tmp_path / r["file"]).exists()
+    assert r["input_size"] == [1, 22, 22] and r["output_size"] == [1, 20, 20]
+    assert r["max_abs"] < 1e-4, r

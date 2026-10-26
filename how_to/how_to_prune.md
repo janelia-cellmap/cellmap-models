@@ -41,3 +41,39 @@ student predicts; default the first `C_out`).
 
 Keys and shapes are checked against the student. Pruning a model to its own widths returns the identical
 function (tested).
+
+## A student for distillation, from any teacher
+
+`cellmap_models.model_export.distill_student` picks the student's size and initialization for you, for
+any 3D or 2D teacher, to train by distillation (match the teacher's outputs on raw data; no labels needed):
+
+```python
+from cellmap_models.model_export import distill_student, export_onnx_web, output_difference
+
+student = distill_student(teacher, max_parameters=12_000_000,
+                          teacher_input=(178,) * 3, teacher_output=(56,) * 3, out_channels=3)
+student.init            # "pruned" (a funlib UNet teacher) or "random" (any other)
+student.network         # train it to reproduce the teacher on student.input_size blocks
+student.output_size     # the block it writes, centred in the teacher's output
+student.blocks([242])   # larger blocks it computes too, to export it at: [(242, 242, 242)]
+```
+
+* A funlib UNet teacher (what `prune_funlib_unet` covers, e.g. `StandardUnet`, also unflattened from
+  `torch.export`) gets the same UNet with fewer channels, pruned from it: an eager `StandardUnet` when the
+  teacher is laid out as one (checked on its output), else its own module tree narrowed. Widths: of the
+  `(num_fmaps, fmap_inc_factor)` pairs up to the teacher's that fit the budget, those of at least half
+  the largest that fits, and among them the most channels at full resolution (mito-aff-unet-setup-16,
+  16/6 and 792M parameters, at 12M: 13/3, 10.8M).
+* Any other teacher gets a random `StandardUnet` (fly_organelles' layout, built without funlib; its
+  state dict loads into theirs) with the teacher's channels and output `activation`, at the largest
+  block whose output fits inside the teacher's, centred on it: crop the teacher's output to the middle
+  `student.output_size` for the target.
+* A 2D teacher (one z-slice in, `[1, C, 1, y, x]`, or depth-1 kernels throughout) gets the 2D
+  `StandardUnet` (`KERNEL_2D` 1x3x3, `DOWNSAMPLE_2D` 1x2x2).
+
+`student.blocks(sides)` gives the blocks a `StandardUnet` student also computes, grown (or shrunk) from
+its own by twice the total downsampling at a time so its pooling grid stays put: export it at those
+with `export_onnx_web(student.network, out_dir, name, [student.input_size, *student.blocks(...)])`,
+which takes `(z, y, x)` blocks as well as cube sides (`(1, 556, 556)` writes `<name>_2d_in556_*.onnx`).
+`output_difference(out, ref, threshold)` is `compare_onnx`'s metrics (max/mean |diff|, mse and the
+fraction of `> threshold` decisions that flip) for the student against the teacher.
