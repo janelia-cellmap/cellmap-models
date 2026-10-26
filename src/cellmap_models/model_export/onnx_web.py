@@ -291,7 +291,8 @@ def export_onnx_web(
     with one entry per file and returns the entries.
 
     Args:
-        model: the original PyTorch model (used as the reference; not modified).
+        model: the original PyTorch model (used as the reference, on its own device; not
+            modified).
         out_dir: output folder.
         name: file name stem, e.g. ``"setup_53_mito_affinities_16nm"``.
         input_sizes: cubic input block sizes; each must be a valid input size of the model.
@@ -309,7 +310,9 @@ def export_onnx_web(
     unknown = set(variants) - set(VARIANTS)
     assert not unknown, f"unknown variants {unknown}; choose from {VARIANTS}"
     model = model.eval()
-    export_model = prepare_for_web(model, native_conv3d=native_conv3d)
+    # the reference runs where the model is (a GPU's, say); the export is of a CPU copy
+    device = next(model.parameters()).device
+    export_model = prepare_for_web(model, native_conv3d=native_conv3d).cpu()
     os.makedirs(out_dir, exist_ok=True)
     n_max = max(input_sizes)
     if validation_input is None:
@@ -332,8 +335,14 @@ def export_onnx_web(
             ],
             dtype=np.float32,
         )
-        with torch.no_grad():
-            ref = model(torch.from_numpy(x)).numpy()
+        # float32 without TF32, which would round the reference to ~1e-3
+        with (
+            torch.no_grad(),
+            torch.backends.cudnn.flags(
+                enabled=torch.backends.cudnn.enabled, allow_tf32=False
+            ),
+        ):
+            ref = model(torch.from_numpy(x).to(device)).cpu().numpy()
         stem = f"{name}_in{size}" + ("_conv3d" if native_conv3d else "")
         fp32_path = os.path.join(out_dir, f"{stem}_fp32.onnx")
         export_fp32(export_model, (1, in_channels, size, size, size), fp32_path)
