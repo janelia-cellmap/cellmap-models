@@ -591,6 +591,9 @@ def _metadata(config, source, folder, repo, revision, classes):
         groups = class_groups(config, names)
         offsets = None
         output_dtype = "uint8"
+        # In the export (apply_after_model False): its output is summed
+        # softmax probabilities, x 255 as output_dtype says.
+        activation = {"name": "softmax", "apply_after_model": False, "dim": 1}
         output_sentence = (
             "Each channel is a class's summed softmax probability over its leaf channels (a "
             "composite class's own channel was never trained), x 255 as uint8: "
@@ -603,6 +606,8 @@ def _metadata(config, source, folder, repo, revision, classes):
                 f"classes picks the classes of a semantic_seg model; {source} is {kind}"
             )
         offsets, order = affinity_channels(config)
+        # In the export: its output is the sigmoid's affinities.
+        activation = {"name": "sigmoid", "apply_after_model": False}
         # cellmap-flow takes a channel named *_aff* to be an affinity.
         names = ["object_aff_" + "_".join(str(v) for v in o) for o in offsets]
         output_dtype = "float32"
@@ -658,7 +663,7 @@ def _metadata(config, source, folder, repo, revision, classes):
         inference_input_shape=window,
         inference_output_shape=window,
         input_normalization=normalization,
-        inference_output_activation={"name": "identity", "apply_after_model": False},
+        inference_output_activation=activation,
         author=author,
         description=description,
         overlap=overlap,

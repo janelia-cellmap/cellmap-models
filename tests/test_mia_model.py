@@ -227,6 +227,12 @@ def test_semantic_export(tmp_path, mia_train):
     # The tested classes, a composite one the sum of its leaves.
     assert metadata.channels_names == ["ecs", "mito_mem", "mito_lum", "mito"]
     assert metadata.output_dtype == "uint8"
+    # The softmax is in the export, which says so.
+    assert metadata.inference_output_activation.model_dump() == {
+        "name": "softmax",
+        "apply_after_model": False,
+        "dim": 1,
+    }
     assert (metadata.overlap, metadata.block_phase, metadata.blend) == (
         [6, 4, 4],
         "corner",
@@ -273,6 +279,9 @@ def test_affinity_export(tmp_path, mia_train):
     assert metadata.affinity_offsets == offsets
     assert all("_aff" in name for name in metadata.channels_names)
     assert metadata.output_dtype == "float32"
+    # The sigmoid is in the export, which says so.
+    assert metadata.inference_output_activation.name == "sigmoid"
+    assert not metadata.inference_output_activation.apply_after_model
     assert (
         metadata.input_voxel_size == [4, 8, 8] and metadata.native_voxel_size is False
     )
