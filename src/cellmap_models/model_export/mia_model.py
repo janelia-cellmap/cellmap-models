@@ -6,7 +6,9 @@ algorithm it was trained for, its input conventions, and its classes or
 affinity offsets) and ``model.safetensors``. ``load_mia_model`` builds the
 network from mia-train's own code and wraps it in the cellmap-models
 convention; ``export_mia_model`` traces that wrapper into an export folder,
-which ``CellmapModel`` loads and cellmap-flow serves.
+which ``CellmapModel`` loads and cellmap-flow serves. ``mia_metadata`` is
+that export's metadata, made from config.json and the model card alone,
+without the weights or mia-train.
 
 The wrapper:
 
@@ -324,8 +326,10 @@ def _hf_cache_repo(folder):
     return None, None
 
 
-def _resolve(source, revision):
-    """(local folder holding MIA_FILES, Hugging Face repo id or None, revision or None)."""
+def _resolve(source, revision, needed=MIA_FILES):
+    """(local folder holding the files ``needed``, Hugging Face repo id or
+    None, revision or None). From a repo, only those files and _CARD_FILES
+    are downloaded."""
     if os.path.isdir(source):
         if revision is not None:
             raise ValueError(
@@ -348,11 +352,11 @@ def _resolve(source, revision):
         folder = snapshot_download(
             repo_id=source,
             revision=revision,
-            allow_patterns=[*MIA_FILES, *_CARD_FILES],
+            allow_patterns=[*needed, *_CARD_FILES],
         )
         repo = source
         revision = _hf_cache_repo(folder)[1] or revision
-    missing = [f for f in MIA_FILES if not os.path.isfile(os.path.join(folder, f))]
+    missing = [f for f in needed if not os.path.isfile(os.path.join(folder, f))]
     if missing:
         raise FileNotFoundError(
             f"{source} has no {', '.join(missing)}: a mia-train model is {', '.join(MIA_FILES)}"
@@ -488,10 +492,68 @@ def load_mia_model(
     return wrapper, metadata
 
 
+def mia_metadata(
+    source: str,
+    *,
+    revision: str | None = None,
+    classes: list[str] | None = None,
+) -> ModelMetadata:
+    """The metadata ``export_mia_model`` writes of a mia-train model
+    (``load_mia_model``'s ``source``, ``revision`` and ``classes``), made
+    from its config.json, and its model card (README.md) and LICENSE.md when
+    it has them, alone.
+
+    Of a Hugging Face repo only those files are downloaded, and of a folder
+    only they are read: model.safetensors is never read, the network never
+    built and mia-train never imported. So a process with neither mia-train
+    nor a GPU (cellmap-flow's dashboard) can say what a model's export will
+    declare before the export is made. The export's metadata.json is this
+    metadata, field for field, but for a last sentence of its description
+    that says the device it was traced on.
+
+    Raises as load_mia_model does when ``source`` is no mia-train model this
+    module serves, or lacks one of ``classes``.
+    """
+    folder, repo, revision = _resolve(source, revision, needed=("config.json",))
+    config = _config(folder, source)
+    return _metadata(config, source, folder, repo, revision, classes)[0]
+
+
 def _load(source, revision, classes):
     """load_mia_model's wrapper and metadata, and the local folder of the
     source they come from."""
     folder, repo, revision = _resolve(source, revision)
+    config = _config(folder, source)
+    # Checked before the network is built: a ViT-L takes a while.
+    metadata, channels = _metadata(config, source, folder, repo, revision, classes)
+
+    net = MiaNetwork(config)
+    try:
+        from safetensors.torch import load_file
+    except ImportError as e:
+        raise ImportError(
+            'Reading model.safetensors needs safetensors: pip install "cellmap-models[mia]"'
+        ) from e
+    try:
+        net.load_state_dict(load_file(os.path.join(folder, "model.safetensors")))
+    except RuntimeError as e:
+        built_by = getattr(sys.modules.get("models"), "__path__", ["?"])[0]
+        raise RuntimeError(
+            f"{source}'s weights do not fit the network built by the mia-train at "
+            f"{built_by}; its config.json says to load it with mia-train "
+            f"{_load_commit(config) or '(no commit given)'}: {e}"
+        ) from e
+
+    if config["algorithm"]["name"] == "semantic_seg":
+        wrapper = SemanticWindow(net, channels)
+    else:
+        wrapper = AffinityWindow(net, channels)
+    return wrapper.eval(), metadata, folder
+
+
+def _config(folder, source):
+    """The config.json in ``folder``, parsed; a ValueError when it is no
+    mia-train model this module serves (``is_mia_config``)."""
     with open(os.path.join(folder, "config.json"), encoding="utf-8") as f:
         config = json.load(f)
     if not is_mia_config(config):
@@ -505,6 +567,15 @@ def _load(source, revision, classes):
             f"of {_NETWORKS}, a head named one of {_HEADS} and an algorithm named one of "
             f"{_ALGORITHMS}; its config.json has {found}"
         )
+    return config
+
+
+def _metadata(config, source, folder, repo, revision, classes):
+    """(the export's metadata, the network channels its wrapper serves: the
+    class groups of a semantic_seg model, ``class_groups``, or the channel
+    order of an affinity_seg one, ``affinity_channels``), from ``config``
+    and the source's model card and licence in ``folder``. mia_metadata's and
+    load_mia_model's, so that the two are the same."""
     kind = config["algorithm"]["name"]
     window = _window(config)
     voxel_size, native = _voxel_size(config)
@@ -513,7 +584,6 @@ def _load(source, revision, classes):
         folder, repo, revision, config
     )
 
-    # Checked before the network is built: a ViT-L takes a while.
     if kind == "semantic_seg":
         if isinstance(classes, str):
             classes = [classes]
@@ -542,28 +612,6 @@ def _load(source, revision, classes):
             "voxel and the voxel at its channel's offset ([dz, dy, dx], affinity_offsets) belong "
             f"to the same object; offsets {offsets}."
         )
-
-    net = MiaNetwork(config)
-    try:
-        from safetensors.torch import load_file
-    except ImportError as e:
-        raise ImportError(
-            'Reading model.safetensors needs safetensors: pip install "cellmap-models[mia]"'
-        ) from e
-    try:
-        net.load_state_dict(load_file(os.path.join(folder, "model.safetensors")))
-    except RuntimeError as e:
-        built_by = getattr(sys.modules.get("models"), "__path__", ["?"])[0]
-        raise RuntimeError(
-            f"{source}'s weights do not fit the network built by the mia-train at "
-            f"{built_by}; its config.json says to load it with mia-train "
-            f"{_load_commit(config) or '(no commit given)'}: {e}"
-        ) from e
-
-    if kind == "semantic_seg":
-        wrapper = SemanticWindow(net, groups)
-    else:
-        wrapper = AffinityWindow(net, order)
 
     quarter = [w // 4 for w in window]
     overlap = quarter[0] if len(set(quarter)) == 1 else quarter
@@ -622,7 +670,7 @@ def _load(source, revision, classes):
         license=license_name,
         license_link=license_link,
     )
-    return wrapper.eval(), metadata, folder
+    return metadata, (groups if kind == "semantic_seg" else order)
 
 
 def export_mia_model(

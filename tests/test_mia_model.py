@@ -10,6 +10,7 @@ from cellmap_models.model_export import (
     export_mia_model,
     is_mia_config,
     load_mia_model,
+    mia_metadata,
     write_metadata,
 )
 from cellmap_models.model_export.cellmap_model import CellmapModel
@@ -211,6 +212,13 @@ def test_semantic_export(tmp_path, mia_train):
     dinov3 = "license: other\nlicense_name: dinov3-license\nlicense_link: https://ai.meta.com/resources/models-and-libraries/dinov3-license\n"
     (tmp_path / "source" / "README.md").write_text(f"---\n{dinov3}---\n# tiny\n")
     folder = export_mia_model(str(tmp_path / "source"), str(tmp_path / "export"))
+
+    # Its metadata.json is mia_metadata's, made without the weights, but for
+    # the device it was traced on, which ends its description.
+    written = json.loads((tmp_path / "export" / "metadata.json").read_text())
+    description, _ = written.pop("description").split(" Traced on ")
+    planned = mia_metadata(str(tmp_path / "source")).model_dump()
+    assert {**written, "description": description} == planned
 
     model = CellmapModel(folder)
     metadata = model.metadata
