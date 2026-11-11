@@ -13,7 +13,10 @@ from cellmap_models.model_export import (
     write_metadata,
 )
 from cellmap_models.model_export.cellmap_model import CellmapModel
-from cellmap_models.model_export.generate_metadata import prompt_for_missing_fields
+from cellmap_models.model_export.generate_metadata import (
+    generate_huggingface_readme,
+    prompt_for_missing_fields,
+)
 from cellmap_models.model_export.mia_model import MiaNetwork
 
 COMMIT = "4e719562dcafc4761c3a30359899467af2ba38cb"
@@ -205,10 +208,14 @@ def test_without_mia_train_it_says_how_to_install(monkeypatch):
 def test_semantic_export(tmp_path, mia_train):
     config = tiny_config("semantic_seg")
     net = write_source(tmp_path / "source", config)
+    dinov3 = "license: other\nlicense_name: dinov3-license\nlicense_link: https://ai.meta.com/resources/models-and-libraries/dinov3-license\n"
+    (tmp_path / "source" / "README.md").write_text(f"---\n{dinov3}---\n# tiny\n")
     folder = export_mia_model(str(tmp_path / "source"), str(tmp_path / "export"))
 
     model = CellmapModel(folder)
     metadata = model.metadata
+    # Its card's licence, not cellmap-models' bsd-3-clause, on the card pushed.
+    assert f"\n{dinov3}---\n" in generate_huggingface_readme(metadata)
     # The tested classes, a composite one the sum of its leaves.
     assert metadata.channels_names == ["ecs", "mito_mem", "mito_lum", "mito"]
     assert metadata.output_dtype == "uint8"

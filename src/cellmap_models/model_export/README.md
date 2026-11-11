@@ -60,8 +60,11 @@ pip install "mia-train @ git+https://github.com/AI-HHMI/mia-train@<commit>"
 
 or put the `src/` folder of a mia-train clone on `PYTHONPATH`, as the MIA team's model cards do. mia-train's
 top-level packages (`models`, `layers`, `utils`, `distributed`) shadow packages of the same name, such as Dask's
-`distributed`: export in a process that does not use those. The export keeps the source model's licence (the
-ai-hhmi models are under the DINOv3 License); `push_to_huggingface` would label it bsd-3-clause.
+`distributed`: export in a process that does not use those.
+
+The export keeps the source model's licence (the ai-hhmi models are under the DINOv3 License): the metadata's
+`license` and `license_link` come from the source's model card, or from its `LICENSE.md`, which the export copies.
+The model card `push_to_huggingface` writes then names that licence; without them it says bsd-3-clause, as before.
 
 ### Export any PyTorch model
 

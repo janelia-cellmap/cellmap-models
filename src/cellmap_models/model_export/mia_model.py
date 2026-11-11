@@ -36,6 +36,7 @@ already loaded (Dask's ``distributed``, say).
 import json
 import os
 import re
+import shutil
 import sys
 import warnings
 from pathlib import Path
@@ -379,8 +380,32 @@ def _model_card(folder):
     return front, title
 
 
+def _license(folder, front):
+    """(license, license_link) of the source, as ModelMetadata takes them;
+    (None, None) when it names none.
+
+    From its model card's front matter: the name and link of a licence of
+    its own (Hugging Face's ``license: other``), else its licence id. Else
+    from its LICENSE.md, whose title names the licence ("DINOv3 License" is
+    dinov3-license) and which export_mia_model copies into the export, so
+    that it is the link, a file beside the model, unless the card gives one.
+    """
+    has_file = os.path.isfile(os.path.join(folder, "LICENSE.md"))
+    named = front.get("license")
+    name = front.get("license_name") or (named if named != "other" else None)
+    link = front.get("license_link")
+    if name is None and has_file:
+        with open(os.path.join(folder, "LICENSE.md"), encoding="utf-8") as f:
+            title = next((line for line in f if line.strip()), "")
+        name = re.sub(r"[^a-z0-9]+", "-", title.lower()).strip("-") or None
+    if link is None and has_file and named in (None, "other"):
+        link = "LICENSE.md"
+    return name, (link if name else None)
+
+
 def _provenance(folder, repo, revision, config):
-    """(model name, author, the sentence saying where it comes from and its licence)."""
+    """(model name, author, the sentence saying where it comes from and its
+    licence, license, license_link)."""
     front, title = _model_card(folder)
     org = repo.split("/")[0] if repo else None
     if org == "ai-hhmi" or (
@@ -427,7 +452,7 @@ def _provenance(folder, repo, revision, config):
         sentence += f"; it loads with mia-train {_load_commit(config)}"
     licence = licence or "the source model's own"
     sentence += f". Licence: {licence}, which governs this export."
-    return name, author, sentence
+    return name, author, sentence, *_license(folder, front)
 
 
 def _intensity(config):
@@ -459,6 +484,13 @@ def load_mia_model(
     are loaded strictly. Raises ImportError when mia-train's network code
     cannot be imported, saying how to install it.
     """
+    wrapper, metadata, _ = _load(source, revision, classes)
+    return wrapper, metadata
+
+
+def _load(source, revision, classes):
+    """load_mia_model's wrapper and metadata, and the local folder of the
+    source they come from."""
     folder, repo, revision = _resolve(source, revision)
     with open(os.path.join(folder, "config.json"), encoding="utf-8") as f:
         config = json.load(f)
@@ -477,7 +509,9 @@ def load_mia_model(
     window = _window(config)
     voxel_size, native = _voxel_size(config)
     normalization, input_sentence = _intensity(config)
-    name, author, provenance = _provenance(folder, repo, revision, config)
+    name, author, provenance, license_name, license_link = _provenance(
+        folder, repo, revision, config
+    )
 
     # Checked before the network is built: a ViT-L takes a while.
     if kind == "semantic_seg":
@@ -585,8 +619,10 @@ def load_mia_model(
         output_dtype=output_dtype,
         affinity_offsets=offsets,
         native_voxel_size=native,
+        license=license_name,
+        license_link=license_link,
     )
-    return wrapper.eval(), metadata
+    return wrapper.eval(), metadata, folder
 
 
 def export_mia_model(
@@ -601,12 +637,14 @@ def export_mia_model(
 
     Writes ``model.ts`` (TorchScript, traced at the model's window),
     ``model.pt2`` (torch.export) when torch.export can export the model,
-    skipped with a printed note when it cannot, ``metadata.json`` and
-    ``README.md``. Traces on CUDA under bf16 autocast, as the MIA team run
+    skipped with a printed note when it cannot, ``metadata.json``,
+    ``README.md``, and the source's ``LICENSE.md`` when it has one. The
+    metadata's license and license_link are the source's (``_license``), so
+    the model card ``push_to_huggingface`` writes names its licence. Traces on CUDA under bf16 autocast, as the MIA team run
     their models, when CUDA is available; else in float32 on the CPU, which
     warns: a ViT-L takes minutes a window there.
     """
-    wrapper, metadata = load_mia_model(source, revision=revision, classes=classes)
+    wrapper, metadata, source_folder = _load(source, revision, classes)
     if torch.cuda.is_available():
         device = torch.device("cuda")
         precision = "Traced on CUDA under bf16 autocast; the trace keeps that device: run it on CUDA."
@@ -642,4 +680,9 @@ def export_mia_model(
 
     metadata.description = f"{metadata.description} {precision}"
     write_metadata(metadata, folder)
+    # The licence's text travels with the model (and is the card's
+    # license_link when the source's card gives no other).
+    licence_file = os.path.join(source_folder, "LICENSE.md")
+    if os.path.isfile(licence_file):
+        shutil.copyfile(licence_file, os.path.join(folder, "LICENSE.md"))
     return folder

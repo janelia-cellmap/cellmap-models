@@ -8,6 +8,9 @@ import cellmap_models.model_export.config as c
 # leaves them unset rather than asking for them, as most models have none.
 _NOT_PROMPTED = {"prompt": False}
 
+# The licence a model card gives a model whose metadata names none.
+DEFAULT_LICENSE = "bsd-3-clause"
+
 CURRENT_FORMAT_VERSION = "1"
 
 
@@ -247,6 +250,24 @@ class ModelMetadata(BaseModel):
         ),
         json_schema_extra=_NOT_PROMPTED,
     )
+    license: Optional[str] = Field(
+        None,
+        description=(
+            "The model's licence: an id Hugging Face knows (bsd-3-clause, mit, ...), or the name "
+            "of another (dinov3-license), given with license_link. None: the model card says "
+            f"{DEFAULT_LICENSE}, cellmap-models' own."
+        ),
+        json_schema_extra=_NOT_PROMPTED,
+    )
+    license_link: Optional[str] = Field(
+        None,
+        description=(
+            "Where the licence's text is: a URL, or a file in the model's folder (LICENSE.md). "
+            "With license, a Hugging Face model card names the licence as 'other', with "
+            "license as its name and this as its link."
+        ),
+        json_schema_extra=_NOT_PROMPTED,
+    )
 
     @field_validator("output_dtype", mode="before")
     @classmethod
@@ -313,11 +334,33 @@ def _serving_details(metadata: ModelMetadata) -> List[tuple]:
     return details
 
 
+def _license_front_matter(metadata: ModelMetadata) -> str:
+    """A model card's licence keys: Hugging Face's ``other``, with the
+    licence's name and link, when the metadata gives both; else its id,
+    DEFAULT_LICENSE when it gives none."""
+    if metadata.license and metadata.license_link:
+        return (
+            f"license: other\nlicense_name: {metadata.license}\n"
+            f"license_link: {metadata.license_link}"
+        )
+    return f"license: {metadata.license or DEFAULT_LICENSE}"
+
+
+def _license_section(metadata: ModelMetadata, heading: str) -> str:
+    """A README's License section, ending in a blank line; '' when the
+    metadata names no licence (the README is then as it always was)."""
+    if not metadata.license:
+        return ""
+    link = f" ({metadata.license_link})" if metadata.license_link else ""
+    return f"{heading}{metadata.license}{link}\n\n"
+
+
 def generate_huggingface_readme(metadata: ModelMetadata):
     """Generate a HuggingFace model card README with YAML frontmatter."""
     serving_rows = "".join(
         f"\n| **{label}** | {value} |" for label, value in _serving_details(metadata)
     )
+    license_section = _license_section(metadata, "## License\n\n")
     tags = [
         "pytorch",
         "onnx",
@@ -334,7 +377,7 @@ def generate_huggingface_readme(metadata: ModelMetadata):
 library_name: cellmap-models
 tags:
 {chr(10).join(f"- {t}" for t in tags)}
-license: bsd-3-clause
+{_license_front_matter(metadata)}
 ---
 
 # {metadata.model_name or "Unnamed"}
@@ -396,7 +439,7 @@ path = snapshot_download(repo_id="{metadata.model_name or 'janelia-cellmap/model
 model = CellmapModel(path)
 ```
 
-## Author
+{license_section}## Author
 
 {metadata.author or "CellMap Project Team, HHMI Janelia"}
 
@@ -412,6 +455,7 @@ def generate_readme(metadata: ModelMetadata):
     serving_lines = "".join(
         f"\n- **{label}:** {value}" for label, value in _serving_details(metadata)
     )
+    license_section = _license_section(metadata, "## License\n")
     readme_content = f"""# {metadata.model_name or "Unnamed"} Model
 iteration: {metadata.iteration}
 
@@ -434,7 +478,7 @@ iteration: {metadata.iteration}
 - **Input Normalization:** {_format_metadata_value(metadata.input_normalization)}
 - **Inference Output Activation:** {_format_metadata_value(metadata.inference_output_activation)}{serving_lines}
 
-## Author
+{license_section}## Author
 {metadata.author or "N/A"}
 
 ## Version
