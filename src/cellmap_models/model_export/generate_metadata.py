@@ -1,8 +1,12 @@
 import json
-from typing import Any, Callable, List, Optional, get_origin, get_args
+from typing import Any, Callable, List, Optional, Union, get_origin, get_args
 from pydantic import BaseModel, Field, field_validator
 import os
 import cellmap_models.model_export.config as c
+
+# json_schema_extra of the optional serving fields: prompt_for_missing_fields
+# leaves them unset rather than asking for them, as most models have none.
+_NOT_PROMPTED = {"prompt": False}
 
 CURRENT_FORMAT_VERSION = "1"
 
@@ -183,6 +187,76 @@ class ModelMetadata(BaseModel):
         CURRENT_FORMAT_VERSION, description="CellmapModel format version"
     )
 
+    # How a server should run the model, for the models that need more than
+    # their shapes say (cellmap-flow reads these). All optional: None leaves
+    # the server's defaults.
+    overlap: Optional[Union[int, List[int]]] = Field(
+        None,
+        description=(
+            "Output voxels on each side of a served chunk that the model's output block also "
+            "covers: one number for every spatial axis, or one per axis (z, y, x). For a model "
+            "whose output depends on its whole input (a vision transformer attending over all "
+            "of it), which disagrees with itself where two blocks meet: its blocks are run "
+            "overlapping and each chunk served is the weighted mean of the blocks reaching it, "
+            "so it is smooth across chunk faces. A served chunk is the output block less the "
+            "overlap on each side. None (or 0): blocks side by side, as they come."
+        ),
+        json_schema_extra=_NOT_PROMPTED,
+    )
+    block_phase: Optional[str] = Field(
+        None,
+        description=(
+            'With an overlap, where its blocks lie: "centred" on the served chunks, or on their '
+            '"corner"s, half a chunk back, where a chunk lies in 2 blocks a side rather than 3. '
+            'None: "centred".'
+        ),
+        json_schema_extra=_NOT_PROMPTED,
+    )
+    blend: Optional[str] = Field(
+        None,
+        description=(
+            'With an overlap, how the blocks reaching a chunk are weighted: "tent" (flat over a '
+            'block\'s middle, falling over its overlap) or "ramp" (rising linearly from a '
+            'block\'s faces to its centre). None: "tent".'
+        ),
+        json_schema_extra=_NOT_PROMPTED,
+    )
+    output_dtype: Optional[str] = Field(
+        None,
+        description=(
+            "The numpy dtype name of the model's output, e.g. uint8 for probabilities x 255. "
+            "None: float32."
+        ),
+        json_schema_extra=_NOT_PROMPTED,
+    )
+    affinity_offsets: Optional[List[List[int]]] = Field(
+        None,
+        description=(
+            "For an affinity model, one offset per affinity channel, in channel order: "
+            "[dz, dy, dx] in voxels. Channel c at voxel v is the probability that v and "
+            "v + offset_c belong to the same object."
+        ),
+        json_schema_extra=_NOT_PROMPTED,
+    )
+    native_voxel_size: Optional[bool] = Field(
+        None,
+        description=(
+            "True when the model was trained on each dataset at its own voxel size and should "
+            "be run at the data's native resolution; input_voxel_size (and output_voxel_size) "
+            "are then only defaults."
+        ),
+        json_schema_extra=_NOT_PROMPTED,
+    )
+
+    @field_validator("output_dtype", mode="before")
+    @classmethod
+    def _validate_output_dtype(cls, value):
+        if value is None:
+            return None
+        import numpy as np
+
+        return np.dtype(value).name
+
 
 def _format_list(values):
     if values is None:
@@ -200,8 +274,50 @@ def _format_metadata_value(value):
     return str(value)
 
 
+def _serving_details(metadata: ModelMetadata) -> List[tuple]:
+    """(label, value) of each optional serving field the metadata sets, for the READMEs."""
+    details = []
+    if metadata.output_dtype is not None:
+        details.append(("Output dtype", metadata.output_dtype))
+    if metadata.overlap is not None:
+        overlap = metadata.overlap
+        details.append(
+            (
+                "Overlap",
+                f"{_format_list(overlap) if isinstance(overlap, list) else overlap} output voxels"
+                " a side (served chunks are blended where blocks overlap)",
+            )
+        )
+    if metadata.block_phase is not None:
+        details.append(("Block phase", metadata.block_phase))
+    if metadata.blend is not None:
+        details.append(("Blend", metadata.blend))
+    if metadata.affinity_offsets is not None:
+        details.append(
+            (
+                "Affinity offsets (z, y, x)",
+                ", ".join(f"({_format_list(o)})" for o in metadata.affinity_offsets),
+            )
+        )
+    if metadata.native_voxel_size is not None:
+        details.append(
+            (
+                "Native voxel size",
+                (
+                    "yes: run at the data's own voxel size (the voxel sizes above are defaults)"
+                    if metadata.native_voxel_size
+                    else "no"
+                ),
+            )
+        )
+    return details
+
+
 def generate_huggingface_readme(metadata: ModelMetadata):
     """Generate a HuggingFace model card README with YAML frontmatter."""
+    serving_rows = "".join(
+        f"\n| **{label}** | {value} |" for label, value in _serving_details(metadata)
+    )
     tags = [
         "pytorch",
         "onnx",
@@ -241,7 +357,7 @@ license: bsd-3-clause
 | **Inference Input Shape** | {_format_list(metadata.inference_input_shape)} |
 | **Inference Output Shape** | {_format_list(metadata.inference_output_shape)} |
 | **Input Normalization** | {_format_metadata_value(metadata.input_normalization)} |
-| **Inference Output Activation** | {_format_metadata_value(metadata.inference_output_activation)} |
+| **Inference Output Activation** | {_format_metadata_value(metadata.inference_output_activation)} |{serving_rows}
 
 ## Available Formats
 
@@ -293,6 +409,9 @@ model = CellmapModel(path)
 
 
 def generate_readme(metadata: ModelMetadata):
+    serving_lines = "".join(
+        f"\n- **{label}:** {value}" for label, value in _serving_details(metadata)
+    )
     readme_content = f"""# {metadata.model_name or "Unnamed"} Model
 iteration: {metadata.iteration}
 
@@ -313,7 +432,7 @@ iteration: {metadata.iteration}
 - **Input Voxel Size:** {_format_list(metadata.input_voxel_size)}
 - **Output Voxel Size:** {_format_list(metadata.output_voxel_size)}
 - **Input Normalization:** {_format_metadata_value(metadata.input_normalization)}
-- **Inference Output Activation:** {_format_metadata_value(metadata.inference_output_activation)}
+- **Inference Output Activation:** {_format_metadata_value(metadata.inference_output_activation)}{serving_lines}
 
 ## Author
 {metadata.author or "N/A"}
@@ -324,6 +443,20 @@ iteration: {metadata.iteration}
     return readme_content
 
 
+def write_metadata(metadata: ModelMetadata, folder: str):
+    """Write ``metadata.json`` and ``README.md`` into ``folder`` as they are,
+    without asking for anything: for exporters that run unattended."""
+    os.makedirs(folder, exist_ok=True)
+    output_file = os.path.join(folder, "metadata.json")
+    with open(output_file, "w") as f:
+        json.dump(metadata.model_dump(), f, indent=4)
+    print(f"Metadata saved to {output_file}")
+    readme_file = os.path.join(folder, "README.md")
+    with open(readme_file, "w", encoding="utf-8") as f:
+        f.write(generate_readme(metadata))
+    print(f"README saved to {readme_file}")
+
+
 def export_metadata(metadata: ModelMetadata, overwrite: bool = False):
     export_folder = get_export_folder()
     result_folder = os.path.join(export_folder, metadata.model_name or "unnamed")
@@ -332,16 +465,7 @@ def export_metadata(metadata: ModelMetadata, overwrite: bool = False):
         if answer.lower() not in ("y", "yes"):
             return
     metadata = prompt_for_missing_fields(metadata)
-    os.makedirs(result_folder, exist_ok=True)
-    output_file = os.path.join(result_folder, "metadata.json")
-    with open(output_file, "w") as f:
-        json.dump(metadata.model_dump(), f, indent=4)
-    print(f"Metadata saved to {output_file}")
-    readme = generate_readme(metadata)
-    readme_file = os.path.join(result_folder, "README.md")
-    with open(readme_file, "w") as f:
-        f.write(readme)
-    print(f"README saved to {readme_file}")
+    write_metadata(metadata, result_folder)
 
 
 def _is_list_annotation(annotation) -> bool:
@@ -370,6 +494,8 @@ def _get_list_element_type(annotation):
 
 def prompt_for_missing_fields(metadata: ModelMetadata):
     for field_name, field_info in ModelMetadata.model_fields.items():
+        if field_info.json_schema_extra == _NOT_PROMPTED:
+            continue
         value = getattr(metadata, field_name)
         if value is None:
             try:

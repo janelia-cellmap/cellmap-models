@@ -6,8 +6,10 @@ from .generate_metadata import (
     get_export_folder,
     parse_activation_to_torch,
     parse_normalization_min_max,
+    write_metadata,
 )
 from .export_model import export_torch_model, push_to_huggingface
+from .mia_model import MIA_FILES, export_mia_model, is_mia_config, load_mia_model
 from .onnx_web import (
     Conv3dAs2d,
     ConvTranspose3dAsConv,
