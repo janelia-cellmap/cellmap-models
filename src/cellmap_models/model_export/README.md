@@ -50,6 +50,12 @@ mia-train's `sigmoid(0.2 × logit)`, with each channel's [dz, dy, dx] in `affini
 marks a model trained on each dataset at its own voxel size; `input_voxel_size` is then only a default.
 `load_mia_model(source)` returns the eager wrapper and its metadata without exporting.
 
+A program that serves these models converts each once and keeps the export: `mia_cache.cached_export(cache, repo=...)`
+(or `path=...`) answers the export's folder in `cache`, converting when it has none, in a Python process of its own;
+`mia_cache.find_export(cache, repo=...)` only looks. Exports are kept by model commit, by converter (a fingerprint of
+`mia_model.py`, so a changed converter converts again) and by device kind (`cuda` in bf16, `cpu` in fp32); a
+conversion removes killed conversions' leftovers and other converters' exports not opened for 14 days.
+
 It needs safetensors, huggingface_hub, and mia-train's network code at the commit the model's `config.json` names
 (`source.load_with_mia_train_commit`):
 

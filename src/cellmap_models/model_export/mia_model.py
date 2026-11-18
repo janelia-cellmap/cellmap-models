@@ -50,7 +50,7 @@ from .generate_metadata import ModelMetadata, write_metadata
 MIA_FILES = ("config.json", "model.safetensors")
 # Read too when the source has them: the model card (its name and licence)
 # and the licence itself.
-_CARD_FILES = ("README.md", "LICENSE.md")
+CARD_FILES = ("README.md", "LICENSE.md")
 
 # What this module builds and serves, by the names config.json gives them.
 _NETWORKS = ("dinov3_vit3d",)
@@ -328,7 +328,7 @@ def _hf_cache_repo(folder):
 
 def _resolve(source, revision, needed=MIA_FILES):
     """(local folder holding the files ``needed``, Hugging Face repo id or
-    None, revision or None). From a repo, only those files and _CARD_FILES
+    None, revision or None). From a repo, only those files and CARD_FILES
     are downloaded."""
     if os.path.isdir(source):
         if revision is not None:
@@ -352,7 +352,7 @@ def _resolve(source, revision, needed=MIA_FILES):
         folder = snapshot_download(
             repo_id=source,
             revision=revision,
-            allow_patterns=[*needed, *_CARD_FILES],
+            allow_patterns=[*needed, *CARD_FILES],
         )
         repo = source
         revision = _hf_cache_repo(folder)[1] or revision
