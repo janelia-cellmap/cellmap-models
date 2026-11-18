@@ -45,7 +45,9 @@ The model reads (z, y, x) in [0, 1] and answers its whole window. A vision trans
 input, so two windows disagree where they meet: the metadata asks the server to run windows overlapping by a quarter
 of a window a side and blend them (`overlap`, `block_phase: "corner"`, `blend: "ramp"`). A `semantic_seg` model
 answers one uint8 channel per class, the summed softmax probability of the class's leaf channels × 255
-(`classes=[...]` picks them; twelve organelles by default). An `affinity_seg` model answers float32 affinities,
+(`classes=[...]` picks them; twelve organelles by default), and declares each class's id in CellMap's annotations
+(`class_ids`: mito 50, er 51, ...; the table is `cellmap_classes.CELLMAP_CLASS_IDS`) when every class it serves has
+one, so a program taking each voxel's likeliest class can label it as an annotation would. An `affinity_seg` model answers float32 affinities,
 mia-train's `sigmoid(0.2 × logit)`, with each channel's [dz, dy, dx] in `affinity_offsets`. `native_voxel_size: true`
 marks a model trained on each dataset at its own voxel size; `input_voxel_size` is then only a default.
 `load_mia_model(source)` returns the eager wrapper and its metadata without exporting.

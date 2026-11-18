@@ -18,7 +18,8 @@ from cellmap_models.model_export.generate_metadata import (
     generate_huggingface_readme,
     prompt_for_missing_fields,
 )
-from cellmap_models.model_export.mia_model import MiaNetwork
+from cellmap_models.model_export.cellmap_classes import cellmap_class_ids
+from cellmap_models.model_export.mia_model import DEFAULT_CLASSES, MiaNetwork
 
 COMMIT = "4e719562dcafc4761c3a30359899467af2ba38cb"
 
@@ -162,6 +163,7 @@ def test_serving_metadata_round_trips_and_is_never_prompted_for(tmp_path, monkey
         output_dtype="uint8",
         affinity_offsets=[[1, 0, 0], [0, 1, 0]],
         native_voxel_size=True,
+        class_ids=[50, 51],
     )
     metadata = full_metadata(**serving)
     write_metadata(metadata, str(tmp_path))
@@ -169,7 +171,7 @@ def test_serving_metadata_round_trips_and_is_never_prompted_for(tmp_path, monkey
     assert {key: written[key] for key in serving} == serving
     assert ModelMetadata(**written) == metadata
     readme = (tmp_path / "README.md").read_text(encoding="utf-8")
-    assert "ramp" in readme and "(0, 1, 0)" in readme
+    assert "ramp" in readme and "(0, 1, 0)" in readme and "50, 51" in readme
 
     # A file from before these fields still loads, without them.
     old = ModelMetadata(**{k: v for k, v in written.items() if k not in serving})
@@ -189,6 +191,28 @@ def test_is_mia_config():
     assert not is_mia_config({**config, "model": {"name": "vit3d", "kwargs": {}}})
     assert not is_mia_config({k: v for k, v in config.items() if k != "head"})
     assert not is_mia_config([config])
+
+
+def test_a_semantic_model_declares_its_classes_cellmap_ids(tmp_path):
+    """From config.json alone (mia_metadata: no weights, no mia-train): each
+    served class's id in CellMap's annotations, or none at all when one of
+    them is no CellMap class; an affinity model has no classes."""
+
+    def planned(config, **kwargs):
+        folder = tmp_path / str(len(list(tmp_path.iterdir())))
+        folder.mkdir()
+        (folder / "config.json").write_text(json.dumps(config))
+        return mia_metadata(str(folder), **kwargs)
+
+    config = tiny_config("semantic_seg")
+    assert planned(config).class_ids == [1, 3, 4, 50]
+    assert planned(config, classes=["mito", "ecs"]).class_ids == [50, 1]
+    config["classes"][1]["name"] = "glia"
+    metadata = planned(config)
+    assert "glia" in metadata.channels_names and metadata.class_ids is None
+    assert planned(tiny_config("affinity_seg")).class_ids is None
+    # The default twelve organelles'.
+    assert cellmap_class_ids(DEFAULT_CLASSES) == [50, 51, 37, 40, 41, 42, 43, 44, 49, 55, 2, 1]
 
 
 def test_without_mia_train_it_says_how_to_install(monkeypatch):
@@ -240,6 +264,7 @@ def test_semantic_export(tmp_path, mia_train):
     )
     assert metadata.native_voxel_size is True and metadata.input_voxel_size == [8, 8, 8]
     assert metadata.affinity_offsets is None
+    assert metadata.class_ids == [1, 3, 4, 50]
     assert (
         metadata.inference_input_shape
         == metadata.inference_output_shape

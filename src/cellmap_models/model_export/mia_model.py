@@ -22,7 +22,8 @@ The wrapper:
   ``blend``), which took the seams away in cellmap-flow;
 - for semantic_seg: one channel per class, the summed softmax probability
   of the class's leaf channels (a composite class's own channel was never a
-  training target), x 255 as uint8;
+  training target), x 255 as uint8, with each class's id in CellMap's
+  annotations in the metadata (``class_ids``) when every class has one;
 - for affinity_seg: each affinity as mia-train's predictor stores it,
   ``sigmoid(0.2 * logit)``, in float32, the channels in z, y, x order (short
   range, then long), each one's offset in the metadata.
@@ -45,6 +46,7 @@ from pathlib import Path
 
 import torch
 
+from .cellmap_classes import cellmap_class_ids
 from .generate_metadata import ModelMetadata, write_metadata
 
 MIA_FILES = ("config.json", "model.safetensors")
@@ -590,6 +592,8 @@ def _metadata(config, source, folder, repo, revision, classes):
         names = list(classes) if classes is not None else default_classes(config)
         groups = class_groups(config, names)
         offsets = None
+        # Each class's id in CellMap's annotations, when all of them have one.
+        class_ids = cellmap_class_ids(names)
         output_dtype = "uint8"
         # In the export (apply_after_model False): its output is summed
         # softmax probabilities, x 255 as output_dtype says.
@@ -599,6 +603,11 @@ def _metadata(config, source, folder, repo, revision, classes):
             "composite class's own channel was never trained), x 255 as uint8: "
             + ", ".join(names)
             + "."
+            + (
+                f" Their ids in CellMap's annotations (class_ids): {class_ids}."
+                if class_ids
+                else ""
+            )
         )
     else:
         if classes is not None:
@@ -606,6 +615,7 @@ def _metadata(config, source, folder, repo, revision, classes):
                 f"classes picks the classes of a semantic_seg model; {source} is {kind}"
             )
         offsets, order = affinity_channels(config)
+        class_ids = None
         # In the export: its output is the sigmoid's affinities.
         activation = {"name": "sigmoid", "apply_after_model": False}
         # cellmap-flow takes a channel named *_aff* to be an affinity.
@@ -672,6 +682,7 @@ def _metadata(config, source, folder, repo, revision, classes):
         output_dtype=output_dtype,
         affinity_offsets=offsets,
         native_voxel_size=native,
+        class_ids=class_ids,
         license=license_name,
         license_link=license_link,
     )

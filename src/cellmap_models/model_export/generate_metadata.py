@@ -241,6 +241,17 @@ class ModelMetadata(BaseModel):
         ),
         json_schema_extra=_NOT_PROMPTED,
     )
+    class_ids: Optional[List[int]] = Field(
+        None,
+        description=(
+            "For a model whose channels are classes, one id per channel, in channel order: the "
+            "id the channel's class has in CellMap's annotations (mito 50, er 51; "
+            "cellmap_classes.CELLMAP_CLASS_IDS), which a voxel labelled with its likeliest "
+            "class is given. None: the classes are not all CellMap's, or the channels are not "
+            "classes."
+        ),
+        json_schema_extra=_NOT_PROMPTED,
+    )
     native_voxel_size: Optional[bool] = Field(
         None,
         description=(
@@ -320,6 +331,8 @@ def _serving_details(metadata: ModelMetadata) -> List[tuple]:
                 ", ".join(f"({_format_list(o)})" for o in metadata.affinity_offsets),
             )
         )
+    if metadata.class_ids is not None:
+        details.append(("Class ids (CellMap's)", _format_list(metadata.class_ids)))
     if metadata.native_voxel_size is not None:
         details.append(
             (
