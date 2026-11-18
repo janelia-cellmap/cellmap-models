@@ -26,6 +26,54 @@ from cellmap_models.model_export.dacapo_model import export_dacapo_model
 export_dacapo_model("my_run_name", iteration=100000)
 ```
 
+### Export a model trained with mia-train
+
+```python
+from cellmap_models.model_export import export_mia_model
+
+export_mia_model("ai-hhmi/lmd-vitl-p8-cellmap-lvd", "/path/to/export/lmd-vitl-p8-cellmap-lvd")
+```
+
+The source is a Hugging Face repo id or a local folder holding `config.json` and `model.safetensors`, as the
+MIA team (HHMI AI, [ai-hhmi](https://huggingface.co/ai-hhmi)) publish their models: a `semantic_seg` or
+`affinity_seg` model (`is_mia_config(config)` says whether a config is one). It writes `model.ts`, traced at the
+model's window (256³ for the lmd-vitl models), `model.pt2` when torch.export manages, `metadata.json` and
+`README.md`. With a GPU the trace is taken on CUDA under bf16 autocast, as the MIA team run their models, and runs
+on CUDA; without one it is float32 on the CPU, which is slow (minutes a window for a ViT-L).
+
+The model reads (z, y, x) in [0, 1] and answers its whole window. A vision transformer attends over all of its
+input, so two windows disagree where they meet: the metadata asks the server to run windows overlapping by a quarter
+of a window a side and blend them (`overlap`, `block_phase: "corner"`, `blend: "ramp"`). A `semantic_seg` model
+answers one uint8 channel per class, the summed softmax probability of the class's leaf channels × 255
+(`classes=[...]` picks them; twelve organelles by default), and declares each class's id in CellMap's annotations
+(`class_ids`: mito 50, er 51, ...; the table is `cellmap_classes.CELLMAP_CLASS_IDS`) when every class it serves has
+one, so a program taking each voxel's likeliest class can label it as an annotation would. An `affinity_seg` model answers float32 affinities,
+mia-train's `sigmoid(0.2 × logit)`, with each channel's [dz, dy, dx] in `affinity_offsets`. `native_voxel_size: true`
+marks a model trained on each dataset at its own voxel size; `input_voxel_size` is then only a default.
+`load_mia_model(source)` returns the eager wrapper and its metadata without exporting.
+
+A program that serves these models converts each once and keeps the export: `mia_cache.cached_export(cache, repo=...)`
+(or `path=...`) answers the export's folder in `cache`, converting when it has none, in a Python process of its own;
+`mia_cache.find_export(cache, repo=...)` only looks. Exports are kept by model commit, by converter (a fingerprint of
+`mia_model.py`, so a changed converter converts again) and by device kind (`cuda` in bf16, `cpu` in fp32); a
+conversion removes killed conversions' leftovers and other converters' exports not opened for 14 days.
+
+It needs safetensors, huggingface_hub, and mia-train's network code at the commit the model's `config.json` names
+(`source.load_with_mia_train_commit`):
+
+```bash
+pip install "cellmap-models[mia]"
+pip install "mia-train @ git+https://github.com/AI-HHMI/mia-train@<commit>"
+```
+
+or put the `src/` folder of a mia-train clone on `PYTHONPATH`, as the MIA team's model cards do. mia-train's
+top-level packages (`models`, `layers`, `utils`, `distributed`) shadow packages of the same name, such as Dask's
+`distributed`: export in a process that does not use those.
+
+The export keeps the source model's licence (the ai-hhmi models are under the DINOv3 License): the metadata's
+`license` and `license_link` come from the source's model card, or from its `LICENSE.md`, which the export copies.
+The model card `push_to_huggingface` writes then names that licence; without them it says bsd-3-clause, as before.
+
 ### Export any PyTorch model
 
 ```python

@@ -41,7 +41,9 @@ pretrained = ['cellpose[gui]']
 dacapo = ["dacapo-ml", "funlib.geometry"]
 export = ["onnx", "onnxruntime"]
 huggingface = ["huggingface-hub"]
-all = ["cellmap-models[dev,cellpose,pretrained,dacapo,export,huggingface]"]
+# mia_model: mia-train itself comes from git (see model_export/README.md).
+mia = ["safetensors", "huggingface-hub"]
+all = ["cellmap-models[dev,cellpose,pretrained,dacapo,export,huggingface,mia]"]
 
 [project.urls]
 homepage = "https://janelia-cellmap.github.io/cellmap-models"
